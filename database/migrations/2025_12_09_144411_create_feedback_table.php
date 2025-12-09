@@ -18,6 +18,7 @@ return new class extends Migration
         $table->foreignIdFor(App\Models\Room::class)->constrained()->onDelete('cascade');
         $table->integer('rating'); // 1 to 5
         $table->text('comment')->nullable();
+        $table->longText('admin_reply')->nullable();
         $table->timestamps();
         });
     }

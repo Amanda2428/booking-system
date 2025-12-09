@@ -23,7 +23,6 @@ class FeedbackFactory extends Factory
             'booking_id' => $booking->id,
             'user_id'    => $booking->user_id,
             'room_id'    => $booking->room_id,
-
             'rating' => fake()->numberBetween(1, 5),
             'comment' => fake()->sentence(10),
             'admin_reply' => fake()->optional()->sentence(8),
