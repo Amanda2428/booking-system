@@ -17,8 +17,8 @@ class RoomFactory extends Factory
     public function definition(): array
     {
         return [
-            'category_id' => \App\Models\RoomType::factory(),
-            'name' => $this->faker->unique()->words(2, true), 
+            'room_type_id' => \App\Models\RoomType::inRandomOrder()->first()->id,
+            'name' => $this->faker->unique()->words(2, true),
             'capacity' => $this->faker->numberBetween(2, 20),
             'location' => $this->faker->city(),
             'description' => $this->faker->sentence(),

@@ -27,9 +27,9 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'role' => '0',
+            'role' => fake()->randomElement([0, 1]),
             'profile' => fake()->imageUrl(400, 400, 'people', true, 'Faker'),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => Hash::make('password'),  //hashing the password
             'remember_token' => Str::random(10),
         ];
     }
@@ -39,7 +39,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
