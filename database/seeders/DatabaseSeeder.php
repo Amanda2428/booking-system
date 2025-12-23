@@ -30,9 +30,10 @@ class DatabaseSeeder extends Seeder
 
     // Room categories
     \App\Models\RoomType::factory(5)->create();
-
+ 
     // Rooms
     \App\Models\Room::factory(20)->create();
+    //ddjdj
 
     // Bookings
     \App\Models\Booking::factory(30)->create();
