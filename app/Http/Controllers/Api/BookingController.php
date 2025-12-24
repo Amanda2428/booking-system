@@ -6,21 +6,44 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Booking;
+use App\Models\Room;
+use App\Models\User;
 
 class BookingController extends Controller
 {
     /**
      * Get all bookings (Admin)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $bookings = Booking::with(['user', 'room'])->latest()->get();
+        $query = Booking::with(['user', 'room'])->latest();
 
-        return response()->json([
-            'success' => true,
-            'data' => $bookings
-        ], 200);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('date', $request->date);
+        }
+
+        // ✅ USE paginate()
+        $bookings = $query->paginate(10)->withQueryString();
+
+        // Status counts
+        $pendingCount   = Booking::where('status', 'pending')->count();
+        $approvedCount  = Booking::where('status', 'approved')->count();
+        $rejectedCount  = Booking::where('status', 'rejected')->count();
+        $cancelledCount = Booking::where('status', 'cancelled')->count();
+
+        return view('admin.bookings', compact(
+            'bookings',
+            'pendingCount',
+            'approvedCount',
+            'rejectedCount',
+            'cancelledCount'
+        ));
     }
+
 
     /**
      *  Store new booking (Student)
@@ -84,27 +107,27 @@ class BookingController extends Controller
     /**
      * Show single booking
      */
-    public function show(string $id)
-    {
-        $booking = Booking::with(['user', 'room', 'feedback'])->find($id);
+   public function show($id)
+{
+    $booking = Booking::with(['room', 'user', 'feedback'])->find($id);
 
-        if (!$booking) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Booking not found'
-            ], 404);
-        }
-
+    if (!$booking) {
         return response()->json([
-            'success' => true,
-            'data' => $booking
-        ], 200);
+            'success' => false,
+            'message' => 'Booking not found'
+        ], 404);
     }
+
+    return response()->json([
+        'success' => true,
+        'data' => $booking
+    ]);
+}
 
     /**
      * Update booking (Admin / Student cancel)
      */
-    public function update(Request $request, string $id)
+     public function update(Request $request, $id)
     {
         $booking = Booking::find($id);
 
@@ -116,31 +139,24 @@ class BookingController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status'     => 'nullable|in:pending,approved,rejected,cancelled',
-            'start_time' => 'nullable',
-            'end_time'   => 'nullable|after:start_time',
-            'date'       => 'nullable|date'
+            'status' => 'required|in:pending,approved,rejected,cancelled'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors'  => $validator->errors()
+                'errors' => $validator->errors()
             ], 422);
         }
 
-        $booking->update($request->only([
-            'status',
-            'date',
-            'start_time',
-            'end_time'
-        ]));
+        $booking->status = $request->status;
+        $booking->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Booking updated successfully',
-            'data'    => $booking
-        ], 200);
+            'data' => $booking
+        ]);
     }
 
     /**
@@ -163,5 +179,69 @@ class BookingController extends Controller
             'success' => true,
             'message' => 'Booking deleted successfully'
         ], 200);
+    }
+
+
+    public function search(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:255'
+        ]);
+
+        $q = $request->q;
+
+        $bookings = Booking::with(['user', 'room'])
+            ->where(function ($query) use ($q) {
+                $query->where('id', 'like', "%{$q}%")
+                    ->orWhere('status', 'like', "%{$q}%")
+                    ->orWhereHas('user', function ($q2) use ($q) {
+                        $q2->where('name', 'like', "%{$q}%")
+                            ->orWhere('email', 'like', "%{$q}%");
+                    })
+                    ->orWhereHas('room', function ($q2) use ($q) {
+                        $q2->where('name', 'like', "%{$q}%");
+                    });
+            })
+            ->paginate(10);
+
+        return view('admin.bookings', [
+            'bookings' => $bookings,
+            'searchTerm' => $q
+        ]);
+    }
+
+
+
+    public function adminDashboard()
+    {
+        // Get statistics
+        $stats = [
+            'totalBookings' => Booking::count(),
+            'pendingBookings' => Booking::where('status', 'pending')->count(),
+            'availableRooms' => Room::where('availability_status', 'available')->count(),
+            'totalUsers' => User::count(),
+            'todayBookings' => Booking::whereDate('date', today())->count(),
+        ];
+
+        // Get recent bookings
+        $recentBookings = Booking::with(['user', 'room'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $roomStatus = Room::with('category')
+            ->orderBy('availability_status')
+            ->limit(5)
+            ->get();
+
+
+        // Share data with all admin views (for sidebar stats)
+        view()->share([
+            'pendingBookingsCount' => $stats['pendingBookings'],
+            'availableRoomsCount' => $stats['availableRooms'],
+            'todayBookingsCount' => $stats['todayBookings'],
+        ]);
+
+        return view('admin.dashboard', compact('stats', 'recentBookings', 'roomStatus'));
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\RoomTypeController;
 use App\Http\Controllers\Api\RoomController;
@@ -33,9 +34,9 @@ Route::prefix('feedbacks')->group(function () {
 
 Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'index']);
-    Route::get('{id}', [BookingController::class, 'show']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::post('/', [BookingController::class, 'store']);
-    Route::post('{id}', [BookingController::class, 'update']);
+    Route::put('/bookings/{id}', [BookingController::class, 'update']);
     Route::delete('{id}', [BookingController::class, 'destroy']);
 });
 Route::prefix('users')->group(function () {

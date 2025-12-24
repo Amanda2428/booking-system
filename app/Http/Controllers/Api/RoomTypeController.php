@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RoomType;
 
+
 class RoomTypeController extends Controller
 {
     /**
@@ -22,20 +23,28 @@ class RoomTypeController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:room_categories,name',
-            'description' => 'nullable|string|max:1000',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255|unique:room_categories,name',
+                'description' => 'nullable|string|max:1000',
+            ]);
 
-        $roomType = RoomType::create([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
+            $roomType = RoomType::create([
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
 
-        return response()->json([
-            'message' => 'Room type created successfully',
-            'roomType' => $roomType
-        ], 201);
+            return response()->json([
+                'message' => 'Room type created successfully',
+                'roomType' => $roomType
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json([
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
+        }
     }
 
     /**
@@ -50,24 +59,25 @@ class RoomTypeController extends Controller
     /**
      * Updating the room type data
      */
-    public function update(Request $request, string $id)
-    {
-        $roomType = RoomType::findOrFail($id);
+   public function update(Request $request, string $id)
+{
+    $roomType = RoomType::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255|unique:room_categories,name,' . $roomType->id,
-            'description' => 'nullable|string|max:1000',
-        ]);
+    $request->validate([
+        'name' => 'required|string|max:255|unique:room_categories,name,' . $roomType->id,
+        'description' => 'nullable|string|max:1000',
+    ]);
 
-        $roomType->name = $request->input('name');
-        $roomType -> description = $request ->input('description');
-        $roomType -> save();
+    $roomType->name = $request->input('name');
+    $roomType->description = $request->input('description');
+    $roomType->save();
 
-        return response()->json([
-            'message' => 'Room type updated successfully',
-            'roomType' => $roomType
-        ]);
-    }
+    return response()->json([
+        'message' => 'Room type updated successfully',
+        'roomType' => $roomType
+    ], 200);
+}
+
 
     /**
      * Deleting the room types data
