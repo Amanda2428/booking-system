@@ -107,7 +107,7 @@
                 </li>
 
                 <li>
-                    <a href="#"
+                    <a href="{{ route('admin.rooms') }}"
                        @click="sidebarOpen = false"
                        class="flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i class="fas fa-door-open mr-3"></i>
@@ -116,7 +116,7 @@
                 </li>
 
                 <li>
-                    <a href="#"
+                    <a href="{{ route('admin.categories') }}"
                        @click="sidebarOpen = false"
                        class="flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i class="fas fa-tags mr-3"></i>

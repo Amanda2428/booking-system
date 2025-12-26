@@ -55,7 +55,7 @@
                 </div>
             </div>
             <div class="mt-4">
-                <a href="#?status=pending" class="text-sm text-indigo-600 hover:underline">
+                <a href="bookings?status=pending" class="text-sm text-indigo-600 hover:underline">
                     View all →
                 </a>
             </div>
@@ -97,7 +97,7 @@
                                 <th class="pb-3">Status</th>
                             </tr>
                         </thead>
-                        {{-- <tbody>
+                        <tbody>
                             @foreach($recentBookings as $booking)
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="py-4">
@@ -108,29 +108,33 @@
                                     <div class="font-medium">{{ $booking->user->name ?? 'N/A' }}</div>
                                 </td>
                                 <td class="py-4">
-                                    <div class="font-medium">{{ $booking->date }}</div>
-                                    <div class="text-sm text-gray-500">{{ $booking->start_time }} - {{ $booking->end_time }}</div>
+                                    <div class="font-medium">{{ $booking->date->format('M d, Y') }}</div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ \Carbon\Carbon::parse($booking->start_time)->format('h:i A') }} -
+                                    {{ \Carbon\Carbon::parse($booking->end_time)->format('h:i A') }}
+                                    </div>
                                 </td>
                                 <td class="py-4">
                                     @php
-                                        $statusColors = [
-                                            'pending' => 'bg-yellow-100 text-yellow-800',
-                                            'approved' => 'bg-green-100 text-green-800',
-                                            'rejected' => 'bg-red-100 text-red-800',
-                                            'cancelled' => 'bg-gray-100 text-gray-800'
-                                        ];
+                                         $statusColors = [
+                                        'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                        'approved' => 'bg-green-100 text-green-800 border-green-200',
+                                        'rejected' => 'bg-red-100 text-red-800 border-red-200',
+                                        'cancelled' => 'bg-gray-100 text-gray-800 border-gray-200',
+                                    ];
                                     @endphp
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium {{ $statusColors[$booking->status] ?? 'bg-gray-100' }}">
-                                        {{ ucfirst($booking->status) }}
-                                    </span>
+                                     <span
+                                    class="px-3 py-1 rounded-full text-xs font-medium border {{ $statusColors[$booking->status] }}">
+                                    {{ ucfirst($booking->status) }}
+                                </span>
                                 </td>
                             </tr>
                             @endforeach
-                        </tbody> --}}
+                        </tbody>
                     </table>
                 </div>
                 <div class="mt-6 text-center">
-                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                    <a href="{{ route('admin.bookings') }}" class="text-indigo-600 hover:text-indigo-800 font-medium">
                         View All Bookings →
                     </a>
                 </div>
@@ -143,7 +147,7 @@
                 <h3 class="text-lg font-semibold text-gray-800">Room Utilization</h3>
             </div>
             <div class="p-6">
-                {{-- <div class="space-y-4">
+                <div class="space-y-4">
                     @foreach($roomUtilization as $room)
                     <div>
                         <div class="flex justify-between mb-1">
@@ -158,7 +162,7 @@
                         </div>
                     </div>
                     @endforeach
-                </div> --}}
+                </div>
             </div>
         </div>
     </div>
@@ -177,7 +181,7 @@
                     <p class="text-sm text-gray-600">Create booking for user</p>
                 </div>
             </a>
-            <a href="#" 
+            <a href="{{ route('admin.rooms.create') }}" 
                class="flex items-center p-4 border rounded-lg hover:bg-gray-50 hover:border-indigo-300">
                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
                     <i class="fas fa-door-open text-green-600"></i>
@@ -203,6 +207,6 @@
 
 @section('scripts')
 <script>
-    // You can add dashboard-specific JavaScript here
+
 </script>
 @endsection

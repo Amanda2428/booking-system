@@ -10,7 +10,7 @@ class Room extends Model
      use HasFactory;
 
     protected $fillable = [
-        'category_id',
+        'room_type_id',
         'name',
         'capacity',
         'location',
@@ -20,7 +20,7 @@ class Room extends Model
 
     public function category()
     {
-        return $this->belongsTo(RoomType::class);
+        return $this->belongsTo(RoomType::class, 'room_type_id');
     }
 
     public function bookings()

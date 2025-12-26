@@ -9,86 +9,138 @@ use App\Models\RoomType;
 
 class RoomTypeController extends Controller
 {
-    /**
-     * Display listing of all rooms
-     */
-    public function index()
-    {
-        $roomTypes = RoomType::with('rooms')->get();
-        return response()->json($roomTypes);
-    }
-
-    /**
-     * Storing of room data
-     */
-    public function store(Request $request)
-    {
-        try {
-            $request->validate([
-                'name' => 'required|string|max:255|unique:room_categories,name',
-                'description' => 'nullable|string|max:1000',
-            ]);
-
-            $roomType = RoomType::create([
-                'name' => $request->name,
-                'description' => $request->description,
-            ]);
-
-            return response()->json([
-                'message' => 'Room type created successfully',
-                'roomType' => $roomType
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            return response()->json([
-                'error' => 'Validation failed',
-                'details' => $e->errors()
-            ], 422);
-        }
-    }
-
-    /**
-     * Display the single room 
-     */
-    public function show(string $id)
-    {
-        $roomType = RoomType::with('rooms')->findOrFail($id);
-        return response()->json($roomType);
-    }
-
-    /**
-     * Updating the room type data
-     */
-   public function update(Request $request, string $id)
+    // Display listing of all categories
+public function index(Request $request)
 {
-    $roomType = RoomType::findOrFail($id);
+    // Start query with rooms relationship
+    $query = RoomType::with('rooms');
 
-    $request->validate([
-        'name' => 'required|string|max:255|unique:room_categories,name,' . $roomType->id,
+    // Apply search if present
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
+
+    // Paginate results
+    $categories = $query->paginate(9)->appends($request->all());
+
+    // Calculate available rooms and average capacity
+    $categories->getCollection()->transform(function ($category) {
+        $category->available_rooms = $category->rooms
+            ->where('availability_status', 'available')
+            ->count();
+        $category->avg_capacity = round($category->rooms->avg('capacity') ?? 0, 3);
+        return $category;
+    });
+
+    return view('admin.categories', compact('categories'));
+}
+
+
+    // Store new category
+  public function store(Request $request)
+{
+    $validator = validator($request->all(), [
+        'name' => 'required|string|max:255',
         'description' => 'nullable|string|max:1000',
     ]);
 
-    $roomType->name = $request->input('name');
-    $roomType->description = $request->input('description');
-    $roomType->save();
+    // Validation errors
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Duplicate check
+    $exists = RoomType::where('name', $request->name)->exists();
+
+    if ($exists) {
+        return response()->json([
+            'success' => false,
+            'errors' => [
+                'name' => ['Category type already exists.']
+            ]
+        ], 409);
+    }
+
+    // Create category
+    $category = RoomType::create([
+        'name' => $request->name,
+        'description' => $request->description,
+    ]);
 
     return response()->json([
-        'message' => 'Room type updated successfully',
-        'roomType' => $roomType
+        'success' => true,
+        'message' => 'Category created successfully',
+        'category' => $category
+    ], 201);
+}
+
+
+
+
+    // Show single category
+    public function show($id)
+    {
+        $category = RoomType::with('rooms')->findOrFail($id);
+        return response()->json($category);
+    }
+
+    // Update category
+   public function update(Request $request, $id)
+{
+    $category = RoomType::findOrFail($id);
+
+    $validator = validator($request->all(), [
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string|max:1000',
+    ]);
+
+    // Validation errors
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Duplicate name check (ignore current record)
+    $exists = RoomType::where('name', $request->name)
+        ->where('id', '!=', $category->id)
+        ->exists();
+
+    if ($exists) {
+        return response()->json([
+            'success' => false,
+            'errors' => [
+                'name' => ['Category type already exists.']
+            ]
+        ], 409);
+    }
+
+    // Update category
+    $category->update([
+        'name' => $request->name,
+        'description' => $request->description,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Category updated successfully',
+        'category' => $category
     ], 200);
 }
 
 
-    /**
-     * Deleting the room types data
-     */
-    public function destroy(string $id)
+    // Delete category
+    public function destroy($id)
     {
-        $roomType = RoomType::findOrFail($id);
-        $roomType->delete();
+        $category = RoomType::findOrFail($id);
+        $category->delete();
 
         return response()->json([
-            'message' => 'Room type deleted successfully'
+            'message' => 'Category deleted successfully'
         ]);
     }
 }
