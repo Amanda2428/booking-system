@@ -125,7 +125,7 @@
                 </li>
 
                 <li>
-                    <a href="#"
+                    <a href="{{ route('admin.users') }}"
                        @click="sidebarOpen = false"
                        class="flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i class="fas fa-users mr-3"></i>
@@ -134,7 +134,7 @@
                 </li>
 
                 <li>
-                    <a href="#"
+                    <a href="{{ route('admin.feedbacks') }}"
                        @click="sidebarOpen = false"
                        class="flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i class="fas fa-comment-alt mr-3"></i>

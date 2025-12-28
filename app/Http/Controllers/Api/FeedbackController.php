@@ -6,125 +6,195 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Feedback;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Room;;
+
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class FeedbackController extends Controller
 {
-    /**
-     * Listing all feedbacks
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $feedbacks = Feedback::with(['user', 'room', 'booking'])->latest()->get();
+        $query = Feedback::with(['user', 'room', 'booking']);
 
-        return response()->json([
-            'success' => true,
-            'data' => $feedbacks
-        ], 200);
+        // Apply filters
+        if ($request->has('rating') && $request->rating != '') {
+            $query->where('rating', $request->rating);
+        }
+
+        if ($request->has('date') && $request->date != '') {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        if ($request->has('unreplied') && $request->unreplied == '1') {
+            $query->whereNull('admin_reply');
+        }
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })->orWhereHas('room', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhere('comment', 'like', "%{$search}%");
+            });
+        }
+
+        $feedbacks = $query->latest()->paginate(15);
+
+        // Get rating statistics
+        $rating5 = Feedback::where('rating', 5)->count();
+        $rating4 = Feedback::where('rating', 4)->count();
+        $rating3 = Feedback::where('rating', 3)->count();
+        $rating2 = Feedback::where('rating', 2)->count();
+        $rating1 = Feedback::where('rating', 1)->count();
+
+        $totalFeedbacks = Feedback::count();
+        $avgRating = Feedback::avg('rating') ?? 0;
+        $unrepliedCount = Feedback::whereNull('admin_reply')->count();
+
+        return view('admin.feedbacks', compact(
+            'feedbacks',
+            'rating5',
+            'rating4',
+            'rating3',
+            'rating2',
+            'rating1',
+            'totalFeedbacks',
+            'avgRating',
+            'unrepliedCount'
+        ));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+public function show(Feedback $feedback)
+{
+    // Load relationships including the user
+    $feedback->load(['user', 'room', 'booking']);
+
+    return response()->json([
+        'success' => true,
+        'data' => $feedback
+    ]);
+}
+
+public function update(Request $request, Feedback $feedback)
+{
+    $request->validate([
+        'admin_reply' => 'required|string|max:1000',
+    ]);
+
+    $feedback->update([
+        'admin_reply' => $request->admin_reply,
+        // Optional: updating status if you have the column
+        'status' => 'replied' 
+    ]);
+
+    // Check if the request is AJAX/Fetch
+    if ($request->expectsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Reply sent successfully!'
+        ]);
+    }
+
+    return redirect()->back()->with('success', 'Reply submitted successfully.');
+}
+
+    public function destroy(Feedback $feedback)
     {
         try {
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'room_id' => 'required|exists:rooms,id',
-                'booking_id' => 'required|exists:bookings,id',
-                'rating' => 'required|integer|min:1|max:5',
-                'comments' => 'nullable|string',
+            $feedback->delete();
+
+            // ✅ Return JSON for fetch()
+            return response()->json([
+                'success' => true,
+                'message' => 'Feedback deleted successfully.'
             ]);
-
-            $feedback = Feedback::create($request->all());
-
-            return response()->json([
-                'success' => "Feedback submitted successfully",
-                'data' => $feedback
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'errors' => $e->errors()
-            ], 422);
+                'message' => 'Failed to delete feedback.'
+            ], 500);
         }
     }
 
-    /**
-     * Searching for a specific feedback by ID
-     */
-    public function show(string $id)
+    public function stats()
     {
-        $feedback = Feedback::with(['user', 'room', 'booking'])->find($id);
+        // Overall statistics
+        $totalFeedbacks = Feedback::count();
+        $avgRating = Feedback::avg('rating') ?? 0;
+        $repliedCount = Feedback::whereNotNull('admin_reply')->count();
 
-        if (!$feedback) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Feedback not found'
-            ], 404);
-        }
+        // Rating distribution
+        $ratingDistribution = Feedback::select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating', 'desc')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->rating => $item->count];
+            });
 
-        return response()->json([
-            'success' => true,
-            'data' => $feedback
-        ], 200);
+        // Monthly trends
+        $monthlyTrends = Feedback::select(
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+            DB::raw('count(*) as count'),
+            DB::raw('avg(rating) as avg_rating')
+        )
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Top rooms by rating
+        $topRooms = Room::withCount(['feedbacks as feedback_count'])
+            ->withAvg('feedbacks', 'rating')
+            ->having('feedback_count', '>', 0)
+            ->orderByDesc('feedbacks_avg_rating')
+            ->take(10)
+            ->get();
+
+        // Top users by feedback
+        $topUsers = User::withCount(['feedbacks as feedback_count'])
+            ->withAvg('feedbacks', 'rating')
+            ->having('feedback_count', '>', 0)
+            ->orderByDesc('feedback_count')
+            ->take(10)
+            ->get();
+
+        return view('admin.feedbacks.stats', compact(
+            'totalFeedbacks',
+            'avgRating',
+            'repliedCount',
+            'ratingDistribution',
+            'monthlyTrends',
+            'topRooms',
+            'topUsers'
+        ));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function export(Request $request)
     {
-        $feedback = Feedback::find($id);
+        $query = Feedback::with(['user', 'room']);
 
-        if (!$feedback) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Feedback not found'
-            ], 404);
+        if ($request->has('rating') && $request->rating != '') {
+            $query->where('rating', $request->rating);
         }
 
-        $validator = Validator::make($request->all(), [
-            'admin_reply'  => 'nullable|string|max:1000',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors'  => $validator->errors()
-            ], 422);
+        if ($request->has('start_date') && $request->start_date != '') {
+            $query->whereDate('created_at', '>=', $request->start_date);
         }
 
-        $feedback->update($request->only([
-            'admin_reply'
-        ]));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Feedback updated successfully',
-            'data'    => $feedback
-        ], 200);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        $feedback = Feedback::find($id);
-
-        if (!$feedback) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Feedback not found'
-            ], 404);
+        if ($request->has('end_date') && $request->end_date != '') {
+            $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        $feedback->delete();
+        $feedbacks = $query->latest()->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Feedback deleted successfully'
-        ], 200);
+        // You can implement CSV/Excel export here
+        // For now, just return view
+        return view('admin.feedbacks.export', compact('feedbacks'));
     }
 }

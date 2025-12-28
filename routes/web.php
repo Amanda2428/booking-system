@@ -10,13 +10,11 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use Illuminate\Support\Facades\Auth;
 
+
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('admidashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -26,11 +24,12 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+        ->name('dashboard');
 
     // Bookings
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings');
-    Route::get('/bookings/search', [BookingController::class, 'search']) ->name('bookings.search');
+    Route::get('/bookings/search', [BookingController::class, 'search'])->name('bookings.search');
     Route::get('/bookings/create', [BookingController::class, 'create'])->name('bookings.create');
     Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('bookings.show');
     Route::put('/bookings/{id}', [BookingController::class, 'update'])->name('bookings.update');
@@ -54,10 +53,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/categories/{id}', [RoomTypeController::class, 'destroy'])->name('categories.destroy');
 
     // Users
-    Route::resource('users', UserController::class);
+    Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+    Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
+    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
 
     // Feedback
     Route::get('/feedbacks', [FeedbackController::class, 'index'])->name('feedbacks');
+    Route::get('/feedbacks/{feedback}', [FeedbackController::class, 'show'])->name('admin.feedbacks.show');
+    Route::post('/feedbacks/{feedback}', [FeedbackController::class, 'update'])->name('admin.feedbacks.update');
+    Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'destroy'])->name('feedbacks.destroy');
 });
 
 Route::get('/', function () {
