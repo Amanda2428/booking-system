@@ -33,6 +33,14 @@
                                 Logout
                             </button>
                         </form>
+                        <li>
+                        <a href="{{ route('profile.edit') }}" @click="sidebarOpen = false"
+                            class="flex items-center p-3 rounded-lg
+                        {{ request()->routeIs('admin.profile') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100' }}">
+                            <i class="fas fa-user-cog mr-3"></i>
+                            Profile
+                        </a>
+                    </li>
                     @else
                         <a
                             href="{{ route('login') }}"

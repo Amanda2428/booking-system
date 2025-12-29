@@ -42,7 +42,7 @@ class AdminDashboardController extends Controller
             $query->whereBetween('date', [$startOfWeek, $endOfWeek])
                 ->where('status', 'approved');
         }])->orderBy('bookings_count', 'desc')
-            ->take(4)
+            ->take(6)
             ->get()
             ->map(function ($room) {
                 // utilization = (bookings this week / 7 days) * 100

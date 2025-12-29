@@ -171,7 +171,7 @@
     <div class="bg-white rounded-xl shadow-sm border p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="#" 
+            <a href="{{ route('admin.bookings.create') }}" 
                class="flex items-center p-4 border rounded-lg hover:bg-gray-50 hover:border-indigo-300">
                 <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
                     <i class="fas fa-plus text-indigo-600"></i>

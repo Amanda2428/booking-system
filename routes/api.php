@@ -38,6 +38,7 @@ Route::prefix('bookings')->group(function () {
     Route::post('/', [BookingController::class, 'store']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
     Route::delete('{id}', [BookingController::class, 'destroy']);
+     Route::post('/bookings/check-availability', [BookingController::class, 'checkAvailability']);
 });
 Route::prefix('users')->group(function () {
     Route::get('/', [UserController::class, 'index']);
