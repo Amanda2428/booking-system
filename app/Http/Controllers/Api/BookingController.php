@@ -48,19 +48,19 @@ class BookingController extends Controller
     /**
      *  Store new booking (Admin)
      */
-    // public function create()
-    // {
-    //     // Get all users (or only students if you prefer)
-    //     $users = User::orderBy('name')->get();
+    public function create()
+    {
+        // Get all users (or only students if you prefer)
+        $users = User::orderBy('name')->get();
 
-    //     // Get available rooms
-    //     $rooms = Room::with('category')
-    //         ->where('availability_status', 'available')
-    //         ->orderBy('name')
-    //         ->get();
+        // Get available rooms
+        $rooms = Room::with('category')
+            ->where('availability_status', 'available')
+            ->orderBy('name')
+            ->get();
 
-    //     return view('admin.bookings.create', compact('users', 'rooms'));
-    // }
+        return view('admin.bookings.create', compact('users', 'rooms'));
+    }
     /**
      *  Store new booking (Student)
      */

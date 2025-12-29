@@ -46,12 +46,10 @@
             <div class="p-6 border-b">
                 <div class="flex items-center">
                     <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                        <a href="{{ route('admin.dashboard') }}">
-                            <i class="fas fa-book text-white text-lg"></i>
-                        </a>
+                        <i class="fas fa-book text-white text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <h2 class="text-lg font-bold text-gray-800">Library Space</h2>
+                        <h2 class="text-lg font-bold text-gray-800">Room Booking</h2>
                         <p class="text-sm text-gray-500">Admin Panel</p>
                     </div>
                 </div>
@@ -60,15 +58,14 @@
             <!-- User Profile -->
             <div class="p-4 border-b">
                 <div class="flex items-center">
-                    <div class="flex -space-x-4 rtl:space-x-reverse">
-                        <img src="{{ asset('storage/' . Auth::user()->profile) }}" alt="Profile Image"
-                            class="w-12 h-12 border-2 border-buffer rounded-full">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-user text-indigo-600"></i>
                     </div>
                     <div class="ml-3">
                         <p class="font-medium text-gray-800">
                             {{ Auth::user()->name ?? 'Admin' }}
                         </p>
-                        <p class="text-medium text-gray-500">
+                        <p class="text-sm text-gray-400">
                             {{ Auth::user()->email ?? 'Unknown email' }}
                         </p>
                         <p class="text-sm text-gray-700">Administrator</p>

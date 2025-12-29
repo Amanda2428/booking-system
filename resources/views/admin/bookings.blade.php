@@ -386,7 +386,7 @@
                     })
                     .catch(err => {
                         console.error('Error details:', err);
-                        alert('An error occurred. Check the console for details.');
+                        alert('You cannot approved for this because the booking is taken by other.');
                     });
             }
         }
