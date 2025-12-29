@@ -38,9 +38,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings');
     Route::get('/bookings/search', [BookingController::class, 'search'])->name('bookings.search');
     Route::get('/bookings/create', [BookingController::class, 'create'])->name('bookings.create');
+    Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('bookings.show');
-    Route::put('/bookings/{id}', [BookingController::class, 'update'])->name('bookings.update');
+    Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.updateStatus');
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])->name('bookings.destroy');
+    Route::get('/admin/bookings/export', [BookingController::class, 'export'])->name('bookings.export');
+    Route::get('/bookings/{booking}/json', [BookingController::class, 'showJson'])->name('bookings.json');
+    Route::post('/bookings/check-availability', [BookingController::class, 'checkAvailability']);
 
     // Rooms
     Route::get('/rooms', [RoomController::class, 'index'])->name('rooms');

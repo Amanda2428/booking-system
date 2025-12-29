@@ -43,10 +43,14 @@
             <h3 class="text-lg font-semibold text-gray-800">Bookings List</h3>
             <div class="flex items-center space-x-2">
                 <span class="text-sm text-gray-600">{{ $bookings->total() }} total bookings</span>
-                <button onclick="exportBookings()"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                {{-- <a href="{{ route('admin.bookings.export') }}"
+                    class="px-4 py-2 bg-green-600 text-black rounded-lg hover:bg-green-700 flex items-center">
                     <i class="fas fa-file-export mr-2"></i> Export
-                </button>
+                </a> --}}
+                <a href="{{ route('admin.bookings.create') }}"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Add Booking
+                </a>
             </div>
         </div>
 
@@ -78,15 +82,16 @@
                             </td>
                             <td class="py-4 px-6">
                                 <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                                        {{-- @if ($booking->user->profile_photo_path)
+                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                                        @if ($booking->user->profile_photo_path)
                                             <img src="{{ asset('storage/' . $booking->user->profile_photo_path) }}"
-                                                alt="{{ $booking->user->name }}" class="w-8 h-8 rounded-full object-cover">
+                                                alt="{{ $booking->user->name }}"
+                                                class="w-10 h-10 rounded-full object-cover">
                                         @else
-                                            <i class="fas fa-user text-indigo-600 text-sm"></i>
-                                        @endif --}}
-                                        <i class="fas fa-user text-indigo-600 text-sm"></i>
+                                            <i class="fas fa-user text-indigo-600 text-m"></i>
+                                        @endif
                                     </div>
+
                                     <div>
                                         <div class="font-medium text-gray-800">{{ $booking->user->name }}</div>
                                         <div class="text-sm text-gray-500">{{ $booking->user->email }}</div>
@@ -303,24 +308,24 @@
                             </div>
                             
                             ${booking.feedback ? `
-                                <div>
-                                    <h4 class="text-sm font-medium text-gray-500 mb-2">FEEDBACK</h4>
-                                    <div class="p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
-                                        <div class="flex items-center mb-2">
-                                            <div class="text-yellow-500">
-                                                ${getStars(booking.feedback.rating)}
-                                            </div>
-                                            <span class="ml-2 text-sm font-medium">${booking.feedback.rating}/5</span>
-                                        </div>
-                                        <p class="text-gray-700">${booking.feedback.comment || 'No comment provided'}</p>
-                                        ${booking.feedback.admin_reply ? `
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-500 mb-2">FEEDBACK</h4>
+                                                <div class="p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
+                                                    <div class="flex items-center mb-2">
+                                                        <div class="text-yellow-500">
+                                                            ${getStars(booking.feedback.rating)}
+                                                        </div>
+                                                        <span class="ml-2 text-sm font-medium">${booking.feedback.rating}/5</span>
+                                                    </div>
+                                                    <p class="text-gray-700">${booking.feedback.comment || 'No comment provided'}</p>
+                                                    ${booking.feedback.admin_reply ? `
                                     <div class="mt-3 p-2 bg-white rounded border-l-4 border-blue-500">
                                         <p class="text-sm text-gray-600"><strong>Admin Reply:</strong> ${booking.feedback.admin_reply}</p>
                                     </div>
                                     ` : ''}
-                                    </div>
-                                </div>
-                                ` : ''}
+                                                </div>
+                                            </div>
+                                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -350,25 +355,39 @@
 
         function updateStatus(id, status) {
             if (confirm(`Are you sure you want to ${status} this booking?`)) {
-                fetch(`/admin/bookings/${id}`, { // Added /admin prefix
+                let url = "{{ route('admin.bookings.updateStatus', ':id') }}".replace(':id', id);
+
+                fetch(url, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({
                             status: status
                         })
                     })
-                    .then(res => res.json())
+                    .then(res => {
+                        // Check if response is okay before parsing JSON
+                        if (!res.ok) {
+                            return res.text().then(text => {
+                                throw new Error(text)
+                            });
+                        }
+                        return res.json();
+                    })
                     .then(data => {
                         if (data.success) {
-                            location.reload(); // Refresh to show updated status
+                            location.reload();
                         } else {
                             alert(data.message || 'Update failed');
                         }
                     })
-                    .catch(err => console.error(err));
+                    .catch(err => {
+                        console.error('Error details:', err);
+                        alert('An error occurred. Check the console for details.');
+                    });
             }
         }
 

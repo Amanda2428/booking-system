@@ -19,7 +19,7 @@
                 </div>
             @else
                 <div
-                    class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xl font-semibold">
+                    class="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl">
                     {{ strtoupper(substr($user->name, 0, 1)) }}
                 </div>
             @endif
