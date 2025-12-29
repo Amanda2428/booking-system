@@ -12,9 +12,16 @@ use Illuminate\Support\Facades\Auth;
 
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    if (Auth::check() && Auth::user()->role == 1) {
+        return redirect()->route('admin.dashboard');
+    }
 
+    return view('welcome');
+})->name('home');
+
+Route::get('/', function () {
+    return view('welcome');
+})->name('welcome');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -68,12 +75,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'destroy'])->name('feedbacks.destroy');
 });
 
-Route::get('/', function () {
-    if (Auth::check() && Auth::user()->role == 1) {
-        return redirect()->route('admin.dashboard');
-    }
 
-    return view('welcome');
-});
 
 require __DIR__ . '/auth.php';

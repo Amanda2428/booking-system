@@ -14,10 +14,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <button id="theme-toggle" class="px-3 py-1 border rounded">
-    Toggle Dark/Light
-</button>
+
 
         <div class="min-h-screen bg-gray-100">
             @include('layouts.navigation')
@@ -39,7 +36,7 @@
         </div>
     </body>
 </html>
-<script>
+{{-- <script>
     const toggleBtn = document.getElementById('theme-toggle');
     const html = document.documentElement;
 
@@ -58,4 +55,4 @@
         }
     });
 </script>
-
+ --}}

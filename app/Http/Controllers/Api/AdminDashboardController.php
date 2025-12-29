@@ -12,7 +12,7 @@ use Carbon\Carbon;
 
 class AdminDashboardController extends Controller
 {
-     public function index()
+    public function index()
     {
         // Booking Statistics
         $totalBookings = Booking::count();
@@ -38,17 +38,17 @@ class AdminDashboardController extends Controller
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
 
-        $roomUtilization = Room::withCount(['bookings' => function($query) use ($startOfWeek, $endOfWeek) {
+        $roomUtilization = Room::withCount(['bookings' => function ($query) use ($startOfWeek, $endOfWeek) {
             $query->whereBetween('date', [$startOfWeek, $endOfWeek])
-                  ->where('status', 'approved');
+                ->where('status', 'approved');
         }])->orderBy('bookings_count', 'desc')
-           ->take(4)
-           ->get()
-           ->map(function($room) {
-               // utilization = (bookings this week / 7 days) * 100
-               $room->utilization = min(100, ($room->bookings_count * 100) / 7);
-               return $room;
-           });
+            ->take(4)
+            ->get()
+            ->map(function ($room) {
+                // utilization = (bookings this week / 7 days) * 100
+                $room->utilization = min(100, ($room->bookings_count * 100) / 7);
+                return $room;
+            });
 
         return view('dashboard', compact(
             'totalBookings',

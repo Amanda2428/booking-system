@@ -20,10 +20,10 @@
                     <p class="text-gray-600">Total Bookings</p>
                 </div>
             </div>
-            <div class="mt-4">
-                <span class="text-sm text-green-600">
-                    <i class="fas fa-arrow-up"></i> 12% from last month
-                </span>
+           <div class="mt-4">
+                <a href="bookings" class="text-sm text-indigo-600 hover:underline">
+                    View all →
+                </a>
             </div>
         </div>
 
@@ -191,7 +191,7 @@
                     <p class="text-sm text-gray-600">Register new room</p>
                 </div>
             </a>
-            <a href="#" 
+            <a href="{{ route('admin.feedbacks') }}" 
                class="flex items-center p-4 border rounded-lg hover:bg-gray-50 hover:border-indigo-300">
                 <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
                     <i class="fas fa-comment-alt text-purple-600"></i>

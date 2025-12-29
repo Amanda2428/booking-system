@@ -101,6 +101,7 @@
                         <th class="py-3 px-6 font-medium">Role</th>
                         <th class="py-3 px-6 font-medium">Bookings</th>
                         <th class="py-3 px-6 font-medium">Status</th>
+                        <th class="py-3 px-6 font-medium">Active</th>
                         <th class="py-3 px-6 font-medium">Actions</th>
                     </tr>
                 </thead>
@@ -134,7 +135,7 @@
                             </td>
                             <td class="py-4 px-6">
                                 <div class="text-center">
-                                    <p class="text-lg font-bold text-gray-800">{{ $user->bookings_count ?? 0 }}</p>
+                                    <p class="text-lg font-bold text-gray-800">{{ $user->total_bookings_count ?? 0 }}</p>
                                     <p class="text-xs text-gray-500">total bookings</p>
                                 </div>
                             </td>
@@ -146,6 +147,19 @@
                                         class="fas {{ $user->email_verified_at ? 'fa-check-circle' : 'fa-clock' }} mr-1"></i>
                                     {{ $user->email_verified_at ? 'Verified' : 'Pending' }}
                                 </span>
+                            </td>
+                            <td class="py-4 px-6">
+                                @if ($user->is_online)
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-circle mr-1 text-xs"></i>
+                                        Online
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <i class="fas fa-circle mr-1 text-xs"></i>
+                                        Offline
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-4 px-6">
                                 <div class="flex items-center space-x-1">
@@ -167,7 +181,7 @@
                                             </button>
                                             <div x-show="open" @click.away="open = false"
                                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10">
-                                                
+
                                                 @if (!$user->email_verified_at)
                                                     <a href="#" onclick="verifyUser({{ $user->id }})"
                                                         class="flex items-center px-4 py-2 text-blue-700 hover:bg-blue-50">
@@ -333,70 +347,70 @@
 
 @section('scripts')
     <script>
-        function viewUser(id) {
-            fetch(`/admin/users/${id}`)
-                .then(response => response.json())
-                .then(user => {
-                    document.getElementById('modalTitle').textContent = `Profile: ${user.name}`;
-                    document.getElementById('userDetails').innerHTML = `
-                    <div class="space-y-6">
-                        <!-- Profile Header -->
-                        <div class="flex items-center">
-                            <div class="w-20 h-20 rounded-full ${user.profile ? 'bg-cover bg-center' : 'bg-indigo-100'} flex items-center justify-center"
-                                 style="${user.profile ? "background-image: url('" + (user.profile.startsWith('http') ? user.profile : '/storage/' + user.profile) + "')" : ''}">
-                                ${!user.profile ? '<i class="fas fa-user text-indigo-600 text-2xl"></i>' : ''}
-                            </div>
-                            <div class="ml-6">
-                                <h2 class="text-2xl font-bold text-gray-800">${user.name}</h2>
-                                <p class="text-gray-600">${user.email}</p>
-                                <div class="flex items-center mt-2 space-x-3">
-                                    <span class="px-3 py-1 rounded-full text-sm font-medium ${user.role == 1 ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
-                                        <i class="fas ${user.role == 1 ? 'fa-user-shield' : 'fa-user-graduate'} mr-1"></i>
-                                        ${user.role == 1 ? 'Administrator' : 'Student'}
-                                    </span>
-                                    <span class="px-3 py-1 rounded-full text-sm font-medium ${user.email_verified_at ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                                        <i class="fas ${user.email_verified_at ? 'fa-check-circle' : 'fa-clock'} mr-1"></i>
-                                        ${user.email_verified_at ? 'Verified' : 'Pending Verification'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Stats -->
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="bg-gray-50 p-4 rounded-lg text-center">
-                                <p class="text-2xl font-bold text-gray-800">${user.bookings_count || 0}</p>
-                                <p class="text-sm text-gray-600">Total Bookings</p>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg text-center">
-                                <p class="text-2xl font-bold text-gray-800">${user.active_bookings || 0}</p>
-                                <p class="text-sm text-gray-600">Active Bookings</p>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg text-center">
-                                <p class="text-2xl font-bold text-gray-800">${user.feedbacks_count || 0}</p>
-                                <p class="text-sm text-gray-600">Feedbacks</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Details -->
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-500 mb-3">ACCOUNT DETAILS</h4>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Member Since</span>
-                                    <span class="font-medium">${new Date(user.created_at).toLocaleDateString()}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Email Verified</span>
-                                    <span class="font-medium">${user.email_verified_at ? new Date(user.email_verified_at).toLocaleDateString() : 'Not Verified'}</span>
-                                </div>
-                            </div>
+       function viewUser(id) {
+    fetch(`/admin/users/${id}`)
+        .then(response => response.json())
+        .then(user => {
+            document.getElementById('modalTitle').textContent = `Profile: ${user.name}`;
+            document.getElementById('userDetails').innerHTML = `
+            <div class="space-y-6">
+                <!-- Profile Header -->
+                <div class="flex items-center">
+                    <div class="w-20 h-20 rounded-full ${user.profile ? 'bg-cover bg-center' : 'bg-indigo-100'} flex items-center justify-center"
+                         style="${user.profile ? "background-image: url('" + (user.profile.startsWith('http') ? user.profile : '/storage/' + user.profile) + "')" : ''}">
+                        ${!user.profile ? '<i class="fas fa-user text-indigo-600 text-2xl"></i>' : ''}
+                    </div>
+                    <div class="ml-6">
+                        <h2 class="text-2xl font-bold text-gray-800">${user.name}</h2>
+                        <p class="text-gray-600">${user.email}</p>
+                        <div class="flex items-center mt-2 space-x-3">
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${user.role == 1 ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
+                                <i class="fas ${user.role == 1 ? 'fa-user-shield' : 'fa-user-graduate'} mr-1"></i>
+                                ${user.role == 1 ? 'Administrator' : 'Student'}
+                            </span>
+                            <span class="px-3 py-1 rounded-full text-sm font-medium ${user.email_verified_at ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                <i class="fas ${user.email_verified_at ? 'fa-check-circle' : 'fa-clock'} mr-1"></i>
+                                ${user.email_verified_at ? 'Verified' : 'Pending Verification'}
+                            </span>
                         </div>
                     </div>
-                `;
-                    document.getElementById('userModal').classList.remove('hidden');
-                });
-        }
+                </div>
+                
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <p class="text-2xl font-bold text-gray-800">${user.total_bookings_count || 0}</p>
+                        <p class="text-sm text-gray-600">Total Bookings</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <p class="text-2xl font-bold text-gray-800">${user.active_bookings_count || 0}</p>
+                        <p class="text-sm text-gray-600">Active Bookings</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <p class="text-2xl font-bold text-gray-800">${user.feedbacks_count || 0}</p>
+                        <p class="text-sm text-gray-600">Feedbacks</p>
+                    </div>
+                </div>
+                
+                <!-- Details -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500 mb-3">ACCOUNT DETAILS</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Member Since</span>
+                            <span class="font-medium">${new Date(user.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Email Verified</span>
+                            <span class="font-medium">${user.email_verified_at ? new Date(user.email_verified_at).toLocaleDateString() : 'Not Verified'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            document.getElementById('userModal').classList.remove('hidden');
+        });
+}
 
         function openCreateModal() {
             document.getElementById('editModalTitle').textContent = 'Add New User';
@@ -478,25 +492,24 @@
         }
 
 
-      function verifyUser(userId) {
-    fetch(`/admin/users/${userId}/verify`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}', // Important for Laravel
-        },
-        body: JSON.stringify({}) 
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            alert('User verified!');
-            location.reload(); // reload to reflect change
+        function verifyUser(userId) {
+            fetch(`/admin/users/${userId}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}', // Important for Laravel
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User verified!');
+                        location.reload(); // reload to reflect change
+                    }
+                })
+                .catch(err => console.error(err));
         }
-    })
-    .catch(err => console.error(err));
-}
-
 
         function confirmDelete(type, id) {
             if (confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {

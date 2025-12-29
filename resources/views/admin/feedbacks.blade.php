@@ -72,9 +72,12 @@
                     <!-- Header -->
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                                <i class="fas fa-user text-indigo-600"></i>
-                            </div>
+                            <div class="w-10 h-10 rounded-full {{ $feedback->user->profile ? 'bg-cover bg-center' : 'bg-indigo-100' }} flex items-center justify-center"
+                                        style="{{ $feedback->user->profile ? "background-image: url('" . asset('storage/' . $feedback->user->profile) . "')" : '' }}">
+                                        @if (!$feedback->user->profile)
+                                            <i class="fas fa-user text-indigo-600"></i>
+                                        @endif
+                                    </div>
                             <div>
                                 <h4 class="font-semibold text-gray-800">{{ $feedback->user->name }}</h4>
                                 <p class="text-sm text-gray-600">{{ $feedback->user->email }}</p>

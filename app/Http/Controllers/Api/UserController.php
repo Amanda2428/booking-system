@@ -19,9 +19,13 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::withCount(['bookings' => function ($q) {
-            $q->where('status', 'approved');
-        }]);
+        $query = User::withCount([
+            'bookings as total_bookings_count',
+            'bookings as active_bookings_count' => function ($q) {
+                $q->whereIn('status', ['pending', 'approved'])
+                    ->where('date', '>=', now()->format('Y-m-d'));
+            }
+        ]);
 
         // Search
         if ($request->filled('search')) {
@@ -48,6 +52,11 @@ class UserController extends Controller
 
         // Pagination with request parameters preserved
         $users = $query->latest()->paginate(15)->appends($request->all());
+
+        $users->getCollection()->transform(function ($user) {
+            $user->is_online = $user->last_seen_at && $user->last_seen_at->gt(now()->subMinutes(5));
+            return $user;
+        });
 
         // Dashboard statistics
         $totalUsers    = User::count();
@@ -114,19 +123,23 @@ class UserController extends Controller
     }
     public function show(User $user)
     {
+        // Load counts using the same logic as index method
+        $user->loadCount([
+            'bookings as total_bookings_count',
+            'bookings as active_bookings_count' => function ($q) {
+                $q->whereIn('status', ['pending', 'approved'])
+                    ->where('date', '>=', now()->format('Y-m-d'));
+            },
+            'feedbacks as feedbacks_count'
+        ]);
+
+        // Get additional data if needed
         $user->load(['bookings' => function ($q) {
             $q->with('room')->latest()->take(10);
         }, 'feedbacks' => function ($q) {
             $q->with('room')->latest()->take(10);
         }]);
 
-        // Get additional stats
-        $user->active_bookings = $user->bookings()
-            ->whereIn('status', ['pending', 'approved'])
-            ->where('date', '>=', now()->format('Y-m-d'))
-            ->count();
-
-        $user->feedbacks_count = $user->feedbacks()->count();
         $user->avg_rating = $user->feedbacks()->avg('rating') ?? 0;
 
         // Get last activity from sessions table
