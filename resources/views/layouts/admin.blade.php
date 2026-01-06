@@ -44,7 +44,7 @@
 
             <!-- Logo -->
             <div class="p-6 border-b">
-                <div class="flex items-center">
+                < class="flex items-center">
                     <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
                         <i class="fas fa-book text-white text-xl"></i>
                     </div>
@@ -52,6 +52,13 @@
                         <h2 class="text-lg font-bold text-gray-800">Room Booking</h2>
                         <p class="text-sm text-gray-500">Admin Panel</p>
                     </div>
+                    {{-- <div class="ml-3">
+                        <h2 class="text-lg font-bold text-gray-800">Room Booking</h2>
+                        <p class="text-sm text-gray-500">Admin Panel</p>
+                    </div> --}}
+
+                
+
                 </div>
             </div>
 
