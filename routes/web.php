@@ -9,19 +9,19 @@ use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\User\UserDashboardController;
+use App\Http\Controllers\User\UserBookingController;
+use App\Http\Controllers\User\UserRoomController;
+use App\Http\Controllers\User\UserFeedbackController;
+use App\Http\Controllers\WelcomeController;
 
+Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
+Route::get('/how-it-works', function () {
+    return view('how-it-works');
+})->name('how-it-works');
 
-Route::get('/', function () {
-    if (Auth::check() && Auth::user()->role == 1) {
-        return redirect()->route('admin.dashboard');
-    }
-
-    return view('welcome');
-})->name('home');
-
-Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+Route::get('/feedback', [WelcomeController::class, 'feedback'])->name('feedback');
+Route::get('/room-types', [WelcomeController::class, 'roomTypesShow'])->name('room-types');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -31,8 +31,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-        ->name('dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // Bookings
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings');
@@ -79,6 +78,35 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'destroy'])->name('feedbacks.destroy');
 });
 
+Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
+    Route::get('/dashboard', function () {
+        if (Auth::user()->role == 1) {
+            return redirect()->route('admin.dashboard');
+        }
+        return app(UserDashboardController::class)->index();
+    })->name('dashboard');
 
+    // Bookings
+    Route::get('/bookings', [UserBookingController::class, 'index'])->name('bookings');
+    Route::get('/bookings/create', [UserBookingController::class, 'create'])->name('bookings.create');
+    Route::post('/bookings', [UserBookingController::class, 'store'])->name('bookings.store');
+    Route::post('/bookings/{booking}/cancel', [UserBookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::get('/bookings/{booking}/details', [UserBookingController::class, 'show'])->name('bookings.show');
+
+    Route::post('/bookings/check-availability', [UserBookingController::class, 'checkAvailability']);
+Route::post('/bookings/{id}/feedback', [UserBookingController::class, 'storeFeedback'])->name('user.bookings.feedback');
+// Route::get('/bookings/create', [UserBookingController::class, 'create'])->name('user.bookings.create');
+    // Rooms
+    Route::get('/rooms', [UserRoomController::class, 'index'])->name('rooms');
+    Route::get('/rooms/available', [UserRoomController::class, 'available'])->name('rooms.available');
+    Route::get('/rooms/{room}/details', [UserRoomController::class, 'show'])->name('rooms.show');
+    
+
+    // Feedback
+    Route::get('/feedback', [UserFeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('/feedback/{feedback}', [UserFeedbackController::class, 'show'])->name('feedback.show');
+    Route::post('/feedback/{feedback}', [UserFeedbackController::class, 'update'])->name('feedback.update');
+    Route::delete('/feedback/{feedback}', [UserFeedbackController::class, 'destroy'])->name('feedback.destroy');
+});
 
 require __DIR__ . '/auth.php';
