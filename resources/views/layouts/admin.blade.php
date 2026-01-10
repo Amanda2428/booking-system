@@ -45,9 +45,11 @@
             <!-- Logo -->
             <div class="p-6 border-b">
                 <div class="flex items-center">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-book text-white text-xl"></i>
-                    </div>
+                    <div
+                            class="w-12 h-12 flex items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gray-200">
+                            <img src="{{ asset('storage/logo/logo.png') }}" alt="StudySpace Logo"
+                                class="w-full h-full object-contain">
+                        </div>
                     <div class="ml-3">
                         <h2 class="text-lg font-bold text-gray-800">Room Booking</h2>
                         <p class="text-sm text-gray-500">Admin Panel</p>
@@ -58,8 +60,13 @@
             <!-- User Profile -->
             <div class="p-4 border-b">
                 <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <i class="fas fa-user text-indigo-600"></i>
+                    <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
+                        @if (auth()->user()->profile)
+                            <img src="{{ asset('storage/' . auth()->user()->profile) }}"
+                                class="w-9 h-9 rounded-full object-cover">
+                        @else
+                            <i class="fas fa-user text-indigo-600"></i>
+                        @endif
                     </div>
                     <div class="ml-3">
                         <p class="font-medium text-gray-800">
@@ -135,6 +142,7 @@
                         {{ request()->routeIs('admin.profile') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100' }}">
                             <i class="fas fa-user-cog mr-3"></i>
                             Profile
+
                         </a>
                     </li>
                     <li class="pt-4 mt-4 border-t">
