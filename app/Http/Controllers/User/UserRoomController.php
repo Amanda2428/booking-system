@@ -91,37 +91,69 @@ class UserRoomController extends Controller
         return view('user.rooms', compact('rooms', 'categories'));
     }
 
-    public function available(Request $request)
-    {
-        $request->validate([
-            'date' => 'required|date|after_or_equal:today'
-        ]);
+   public function available(Request $request)
+{
+    $request->validate([
+        'date' => 'required|date|after_or_equal:today'
+    ]);
 
-        $date = $request->date;
+    $date = $request->date;
+    $startTime = $request->get('start_time'); // Optional: for future use
+    $endTime = $request->get('end_time'); // Optional: for future use
 
-        // Get all available rooms
-        $rooms = Room::with('category')
-            ->where('availability_status', 'available')
-            ->orderBy('name')
-            ->get();
+    // Get all available rooms
+    $rooms = Room::with('category')
+        ->where('availability_status', 'available')
+        ->orderBy('name')
+        ->get();
 
-        // Filter rooms that have no approved bookings for the selected date
-        $availableRooms = $rooms->filter(function ($room) use ($date) {
-            // Check for approved bookings on this date
-            $hasApprovedBookings = Booking::where('room_id', $room->id)
+    // If no time parameters provided, show all rooms (just mark availability status)
+    if (!$startTime || !$endTime) {
+        $rooms = $rooms->map(function ($room) use ($date) {
+            // Get approved bookings for this date
+            $approvedBookings = Booking::where('room_id', $room->id)
                 ->where('date', $date)
                 ->where('status', 'approved')
-                ->exists();
+                ->get();
 
-            return !$hasApprovedBookings;
+            // Add booking info to room object
+            $room->has_bookings = $approvedBookings->count() > 0;
+            $room->approved_bookings = $approvedBookings;
+            $room->available_slots = $this->getAvailabilitySlots($room, Carbon::parse($date));
+            
+            return $room;
         });
 
         return response()->json([
             'success' => true,
             'date' => $date,
-            'rooms' => $availableRooms->values() // Reset keys
+            'rooms' => $rooms
         ]);
     }
+
+    // If time parameters are provided, check for conflicts
+    $availableRooms = $rooms->filter(function ($room) use ($date, $startTime, $endTime) {
+        // Check for conflicting approved bookings
+        $hasConflict = Booking::where('room_id', $room->id)
+            ->where('date', $date)
+            ->where('status', 'approved')
+            ->where(function ($query) use ($startTime, $endTime) {
+                $query->where(function ($q) use ($startTime, $endTime) {
+                    $q->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
+                });
+            })
+            ->exists();
+
+        return !$hasConflict;
+    });
+
+    return response()->json([
+        'success' => true,
+        'date' => $date,
+        'rooms' => $availableRooms->values()
+    ]);
+}
 
     public function show($id)
     {

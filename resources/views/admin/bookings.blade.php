@@ -83,8 +83,8 @@
                             <td class="py-4 px-6">
                                 <div class="flex items-center">
                                     <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                                        @if ($booking->user->profile_photo_path)
-                                            <img src="{{ asset('storage/' . $booking->user->profile_photo_path) }}"
+                                        @if ($booking->user->profile)
+                                            <img src="{{ asset('storage/' . $booking->user->profile) }}"
                                                 alt="{{ $booking->user->name }}"
                                                 class="w-10 h-10 rounded-full object-cover">
                                         @else

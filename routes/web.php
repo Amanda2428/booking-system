@@ -44,6 +44,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/admin/bookings/export', [BookingController::class, 'export'])->name('bookings.export');
     Route::get('/bookings/{booking}/json', [BookingController::class, 'showJson'])->name('bookings.json');
     Route::post('/bookings/check-availability', [BookingController::class, 'checkAvailability']);
+    
 
     // Rooms
     Route::get('/rooms', [RoomController::class, 'index'])->name('rooms');
@@ -96,10 +97,13 @@ Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
     Route::post('/bookings/check-availability', [UserBookingController::class, 'checkAvailability']);
 Route::post('/bookings/{id}/feedback', [UserBookingController::class, 'storeFeedback'])->name('user.bookings.feedback');
 // Route::get('/bookings/create', [UserBookingController::class, 'create'])->name('user.bookings.create');
+
     // Rooms
     Route::get('/rooms', [UserRoomController::class, 'index'])->name('rooms');
     Route::get('/rooms/available', [UserRoomController::class, 'available'])->name('rooms.available');
     Route::get('/rooms/{room}/details', [UserRoomController::class, 'show'])->name('rooms.show');
+    // Route::get('/rooms/available', [UserBookingController::class, 'getAvailableRooms'])
+    // ->name('user.rooms.available');
     
 
     // Feedback

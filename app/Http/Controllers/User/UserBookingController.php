@@ -106,21 +106,21 @@ class UserBookingController extends Controller
 
         // Check for conflicts with approved bookings
         $conflict = Booking::where('room_id', $request->room_id)
-            ->where('date', $request->date)
-            ->where('status', 'approved')
-            ->where(function ($query) use ($request) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('start_time', '<', $request->end_time)
-                        ->where('end_time', '>', $request->start_time);
-                });
-            })
-            ->exists();
+        ->where('date', $request->date)
+        ->where('status', 'approved')
+        ->where(function ($query) use ($request) {
+            $query->where(function ($q) use ($request) {
+                $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>', $request->start_time);
+            });
+        })
+        ->exists();
 
-        if ($conflict) {
-            return back()
-                ->withInput()
-                ->withErrors(['time' => 'This room is already booked for the selected time. Please choose a different time.']);
-        }
+    if ($conflict) {
+        return back()
+            ->withInput()
+            ->withErrors(['time' => 'This room is already booked for the selected time. Please choose a different time.']);
+    }
 
         // Check user's active bookings limit (max 3 pending/approved)
         $activeBookings = Booking::where('user_id', $user->id)
@@ -200,6 +200,25 @@ class UserBookingController extends Controller
         ]);
     }
 
+    public function getAvailableRooms(Request $request)
+{
+    $request->validate([
+        'date' => 'required|date|after_or_equal:today'
+    ]);
+
+    // Get all available rooms (not checking for conflicts here, just availability status)
+    $rooms = Room::where('availability_status', 'available')
+        ->with('category')
+        ->orderBy('name')
+        ->get();
+
+    // Return JSON response
+    return response()->json([
+        'success' => true,
+        'rooms' => $rooms,
+        'date' => $request->date
+    ]);
+}
     public function storeFeedback(Request $request, $id)
     {
         $request->validate([
