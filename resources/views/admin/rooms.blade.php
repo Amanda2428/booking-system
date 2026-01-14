@@ -71,108 +71,109 @@
     <!-- Rooms Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($rooms as $room)
-        <div class="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-            <!-- Room Header -->
-            <div class="p-6 border-b">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800">{{ $room->name }}</h3>
-                        <div class="flex items-center mt-1">
-                            <i class="fas fa-map-marker-alt text-gray-400 text-sm mr-2"></i>
-                            <span class="text-sm text-gray-600">{{ $room->location }}</span>
+            <div class="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+                <!-- Room Header -->
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">{{ $room->name }}</h3>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-map-marker-alt text-gray-400 text-sm mr-2"></i>
+                                <span class="text-sm text-gray-600">{{ $room->location }}</span>
+                            </div>
+                        </div>
+                        <span
+                            class="px-3 py-1 rounded-full text-xs font-medium {{ $room->availability_status == 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                            {{ ucfirst($room->availability_status) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Room Details -->
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                                    <i class="fas fa-users text-blue-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-gray-500">Capacity</p>
+                                    <p class="font-medium">{{ $room->capacity }} people</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                                    <i class="fas fa-tag text-purple-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-gray-500">Category</p>
+                                    <p class="font-medium">{{ $room->category->name ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if ($room->description)
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Description</p>
+                                <p class="text-gray-700 line-clamp-2">{{ $room->description }}</p>
+                            </div>
+                        @endif
+
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t">
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-gray-800">{{ $room->bookings_count ?? 0 }}</p>
+                                <p class="text-xs text-gray-500">Total Bookings</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-gray-800">{{ $room->avg_rating ?? 0 }}/5</p>
+                                <p class="text-xs text-gray-500">Avg Rating</p>
+                            </div>
                         </div>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-medium {{ $room->availability_status == 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                        {{ ucfirst($room->availability_status) }}
-                    </span>
                 </div>
-            </div>
 
-            <!-- Room Details -->
-            <div class="p-6">
-                <div class="space-y-4">
+                <!-- Actions -->
+                <div class="p-6 border-t bg-gray-50">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                                <i class="fas fa-users text-blue-600"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-gray-500">Capacity</p>
-                                <p class="font-medium">{{ $room->capacity }} people</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                                <i class="fas fa-tag text-purple-600"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-gray-500">Category</p>
-                                <p class="font-medium">{{ $room->category->name ?? 'N/A' }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if($room->description)
-                    <div>
-                        <p class="text-sm text-gray-500 mb-1">Description</p>
-                        <p class="text-gray-700 line-clamp-2">{{ $room->description }}</p>
-                    </div>
-                    @endif
-
-                    <!-- Stats -->
-                    <div class="grid grid-cols-2 gap-4 pt-4 border-t">
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-gray-800">{{ $room->bookings_count ?? 0 }}</p>
-                            <p class="text-xs text-gray-500">Total Bookings</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-gray-800">{{ $room->avg_rating ?? 0 }}/5</p>
-                            <p class="text-xs text-gray-500">Avg Rating</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="p-6 border-t bg-gray-50">
-                <div class="flex items-center justify-between">
-                    <div class="flex space-x-2">
-                        <button onclick="viewRoom({{ $room->id }})"
+                        <div class="flex space-x-2">
+                            <button onclick="viewRoom({{ $room->id }})"
                                 class="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium">
-                            <i class="fas fa-eye mr-1"></i> View
-                        </button>
-                        <a href="{{ route('admin.rooms.edit', $room->id) }}"
-                           class="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-medium">
-                            <i class="fas fa-edit mr-1"></i> Edit
-                        </a>
-                    </div>
-                    <button onclick="confirmDelete('room', {{ $room->id }})"
+                                <i class="fas fa-eye mr-1"></i> View
+                            </button>
+                            <a href="{{ route('admin.rooms.edit', $room->id) }}"
+                                class="px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-medium">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </a>
+                        </div>
+                        <button onclick="confirmDelete('room', {{ $room->id }})"
                             class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium">
-                        <i class="fas fa-trash mr-1"></i> Delete
-                    </button>
+                            <i class="fas fa-trash mr-1"></i> Delete
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
         @empty
-        <div class="md:col-span-3">
-            <div class="bg-white rounded-lg shadow-sm border p-12 text-center">
-                <i class="fas fa-door-open text-4xl text-gray-300 mb-4"></i>
-                <h3 class="text-lg font-medium text-gray-700 mb-2">No rooms found</h3>
-                <p class="text-gray-500 mb-6">Get started by adding your first room</p>
-                <a href="{{ route('admin.rooms.create') }}" 
-                   class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 inline-flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Add Room
-                </a>
+            <div class="md:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm border p-12 text-center">
+                    <i class="fas fa-door-open text-4xl text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">No rooms found</h3>
+                    <p class="text-gray-500 mb-6">Get started by adding your first room</p>
+                    <a href="{{ route('admin.rooms.create') }}"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 inline-flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add Room
+                    </a>
+                </div>
             </div>
-        </div>
         @endforelse
     </div>
 
     <!-- Pagination -->
-    @if($rooms->hasPages())
-    <div class="mt-6">
-        {{ $rooms->links() }}
-    </div>
+    @if ($rooms->hasPages())
+        <div class="mt-6">
+            {{ $rooms->links() }}
+        </div>
     @endif
 
     <!-- View Modal -->
@@ -194,14 +195,14 @@
 @endsection
 
 @section('scripts')
-<script>
-function viewRoom(id) {
-    fetch(`/admin/rooms/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            const room = data;
-            document.getElementById('modalTitle').textContent = `Room: ${room.name}`;
-            document.getElementById('roomDetails').innerHTML = `
+    <script>
+        function viewRoom(id) {
+            fetch(`/admin/rooms/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const room = data;
+                    document.getElementById('modalTitle').textContent = `Room: ${room.name}`;
+                    document.getElementById('roomDetails').innerHTML = `
                 <div class="space-y-6">
                     <!-- Basic Info -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -276,13 +277,13 @@ function viewRoom(id) {
                     
                     <!-- Description -->
                     ${room.description ? `
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-500 mb-3">DESCRIPTION</h4>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <p class="text-gray-700">${room.description}</p>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-3">DESCRIPTION</h4>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <p class="text-gray-700">${room.description}</p>
+                            </div>
                         </div>
-                    </div>
-                    ` : ''}
+                        ` : ''}
                     
                     <!-- Upcoming Bookings -->
                     <div>
@@ -293,54 +294,58 @@ function viewRoom(id) {
                     </div>
                 </div>
             `;
-            document.getElementById('roomModal').classList.remove('hidden');
-        });
-}
-
-function searchRooms(query) {
-    const url = new URL(window.location.href);
-    if (query) {
-        url.searchParams.set('search', query);
-    } else {
-        url.searchParams.delete('search');
-    }
-    window.location.href = url.toString();
-}
-
-function confirmDelete(type, id) {
-    if (confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
-       fetch(`/admin/rooms/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
+                    document.getElementById('roomModal').classList.remove('hidden');
+                });
         }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success || data.message) {
-                location.reload();
+
+        function searchRooms(query) {
+            const url = new URL("{{ route('admin.rooms.search') }}");
+
+            const currentParams = new URLSearchParams(window.location.search);
+
+            if (query) {
+                url.searchParams.set('search', query);
             } else {
-                alert('Failed to delete room');
+                url.searchParams.delete('search');
             }
+
+            window.location.href = url.toString();
+        }
+
+        function confirmDelete(type, id) {
+            if (confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
+                fetch(`/admin/rooms/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success || data.message) {
+                            location.reload();
+                        } else {
+                            alert('Failed to delete room');
+                        }
+                    });
+            }
+        }
+
+        function closeRoomModal() {
+            document.getElementById('roomModal').classList.add('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeRoomModal();
         });
-    }
-}
-
-function closeRoomModal() {
-    document.getElementById('roomModal').classList.add('hidden');
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeRoomModal();
-});
-</script>
-<style>
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-</style>
+    </script>
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
 @endsection

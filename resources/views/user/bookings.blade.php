@@ -104,14 +104,13 @@
                                 <i class="fas fa-eye mr-2"></i> View Details
                             </button>
 
-                            @if ($booking->status == 'pending' && $booking->date->isFuture())
+                            {{-- Cancel button for all pending bookings --}}
+                            @if ($booking->status == 'pending')
                                 <button onclick="cancelBooking({{ $booking->id }})"
                                     class="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 flex items-center text-sm">
                                     <i class="fas fa-times mr-2"></i> Cancel
                                 </button>
                             @endif
-
-
 
                             @if (!$booking->feedback && $booking->status == 'approved')
                                 <button onclick="viewFeedback({{ $booking->id }})"
@@ -343,7 +342,7 @@
                             <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
                                 Close
                             </button>
-                            ${booking.status === 'pending' && new Date(booking.date) >= new Date() ? `
+                            ${booking.status === 'pending' ? `
                                     <button onclick="cancelBooking(${booking.id})" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                                         Cancel Booking
                                     </button>` : ''}

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Models\Booking;
 
 class RoomController extends Controller
 {
@@ -13,9 +14,7 @@ class RoomController extends Controller
     {
         $query = Room::with('category');
 
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
+
 
         $rooms = $query->latest()->paginate(12);
 
@@ -34,6 +33,29 @@ class RoomController extends Controller
         ));
     }
 
+ public function search(Request $request)
+{
+    $query = Room::with('category');
+
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
+
+    $rooms = $query->latest()->paginate(12);
+
+    $totalRooms = Room::count();
+    $availableRooms = Room::where('availability_status', 'available')->count();
+    $avgCapacity = Room::avg('capacity') ?? 0;
+    $categories = RoomType::all();
+
+    return view('admin.rooms', compact(
+        'rooms',
+        'totalRooms',
+        'availableRooms',
+        'avgCapacity',
+        'categories'
+    ));
+}
     public function create()
     {
         $categories = RoomType::all();
@@ -95,21 +117,21 @@ class RoomController extends Controller
             ->with('success', 'Room updated successfully.');
     }
 
-public function destroy(Room $room)
-{
-    try {
-        $room->delete();
+    public function destroy(Room $room)
+    {
+        try {
+            $room->delete();
 
-        // ✅ Return JSON for fetch()
-        return response()->json([
-            'success' => true,
-            'message' => 'Room deleted successfully.'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to delete room.'
-        ], 500);
+            // ✅ Return JSON for fetch()
+            return response()->json([
+                'success' => true,
+                'message' => 'Room deleted successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete room.'
+            ], 500);
+        }
     }
-}
 }
