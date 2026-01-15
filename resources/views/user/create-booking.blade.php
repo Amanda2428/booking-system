@@ -204,13 +204,11 @@
                                         Cancel
                                     </a>
                                     <button type="submit" id="submitBtn"
-                                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
+                                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 transition-colors duration-200"
                                         disabled>
                                         <i class="fas fa-paper-plane mr-2"></i>
                                         <span id="submitText">Submit Booking Request</span>
-                                        <span id="submitStatus" class="ml-2 text-sm opacity-75">
-                                            <i class="fas fa-lock mr-1"></i> Verify availability first
-                                        </span>
+                                        <span id="submitStatus" class="ml-2 text-sm"></span>
                                     </button>
                                 </div>
                             </div>
@@ -343,7 +341,6 @@
                     let roomsHTML = '<div class="grid grid-cols-1 gap-4">';
 
                     data.rooms.forEach(room => {
-                        // Check multiple conditions for pre-selection
                         const isUrlRoom = urlRoomId && parseInt(urlRoomId) === room.id;
                         const isOldRoom = {{ old('room_id', 0) }} == room.id;
                         
@@ -355,7 +352,7 @@
                                        ${(isOldRoom || isUrlRoom) ? 'checked' : ''}
                                        class="hidden peer"
                                        onchange="handleRoomSelection(${room.id}, '${room.name.replace(/'/g, "\\'")}', '${room.location.replace(/'/g, "\\'")}', ${room.capacity})">
-                                <div class="p-4 border rounded-lg cursor-pointer hover:border-indigo-300 peer-checked:border-indigo-500 peer-checked:bg-indigo-50">
+                                <div class="p-4 border rounded-lg cursor-pointer hover:border-indigo-300 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 transition-all duration-200">
                                     <div class="flex justify-between items-start">
                                         <div>
                                             <h5 class="font-semibold text-gray-800">${room.name}</h5>
@@ -394,7 +391,6 @@
                             }
                         }
                     } else if ({{ old('room_id', 0) }}) {
-                        // Check for old input value
                         const oldRoomId = {{ old('room_id', 0) }};
                         const room = data.rooms.find(r => r.id == oldRoomId);
                         if (room) {
@@ -441,7 +437,6 @@
             </div>
         `;
 
-        // Enable time validation
         validateTime();
     }
 
@@ -454,7 +449,6 @@
             validationDiv.classList.add('hidden');
             updateTimeSummary(startTime, endTime);
             
-            // Reset availability if time changes
             isRoomAvailable = false;
             updateSubmitButtonStatus();
             document.getElementById('availabilityResult').classList.add('hidden');
@@ -467,7 +461,7 @@
 
         const start = new Date(`2000-01-01T${startTime}`);
         const end = new Date(`2000-01-01T${endTime}`);
-        const duration = (end - start) / (1000 * 60 * 60); // Hours
+        const duration = (end - start) / (1000 * 60 * 60);
 
         let message = '';
         let colorClass = '';
@@ -501,8 +495,7 @@
 
         updateTimeSummary(startTime, endTime);
 
-        // Reset availability if time changes
-        if (isRoomAvailable) {
+        if (isRoomAvailable && !valid) {
             isRoomAvailable = false;
             updateSubmitButtonStatus();
             document.getElementById('availabilityResult').classList.add('hidden');
@@ -579,7 +572,6 @@
             return;
         }
 
-        // Validate time first
         const timeValidation = validateTime();
         if (!timeValidation.valid) {
             showAlert('error',
@@ -604,7 +596,6 @@
         `;
         resultDiv.classList.remove('hidden');
         
-        // Disable submit button while checking
         updateSubmitButtonStatus();
 
         fetch(`/user/bookings/check-availability`, {
@@ -643,7 +634,6 @@
                     isRoomAvailable = true;
                     updateSubmitButtonStatus();
                     
-                    // Show success alert
                     showAlert('success',
                         '<div class="flex items-center mb-4">' +
                         '<div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">' +
@@ -702,7 +692,6 @@
                     isRoomAvailable = false;
                     updateSubmitButtonStatus();
                     
-                    // Build alert message
                     let alertMessage = 
                         '<div class="flex items-center mb-4">' +
                         '<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">' +
@@ -788,7 +777,36 @@
             });
     }
 
-    // Form validation
+    // Update submit button status function
+    function updateSubmitButtonStatus() {
+        const submitBtn = document.getElementById('submitBtn');
+        const submitStatus = document.getElementById('submitStatus');
+        
+        if (isRoomAvailable) {
+            // Enable submit button
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.add('hover:bg-indigo-700');
+            
+            // Update status text
+            submitStatus.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Room verified ✓';
+            submitStatus.className = 'ml-2 text-sm text-green-500 font-medium';
+            
+            // Add animation class
+            submitBtn.classList.add('animate-pulse-subtle');
+        } else {
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.remove('hover:bg-indigo-700', 'animate-pulse-subtle');
+            
+            // Update status text
+            submitStatus.innerHTML = '<i class="fas fa-lock mr-1"></i> Verify availability first';
+            submitStatus.className = 'ml-2 text-sm text-yellow-600';
+        }
+    }
+
+    // Form submission handler
     document.getElementById('bookingForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -890,9 +908,8 @@
         showConfirmationModal();
     });
 
-    // Function to show custom alert modal
+    // Alert modal functions
     function showAlert(type, message) {
-        // Create or get alert modal
         let alertModal = document.getElementById('customAlertModal');
         if (!alertModal) {
             alertModal = document.createElement('div');
@@ -913,19 +930,13 @@
             document.body.appendChild(alertModal);
         }
 
-        // Set message
         document.getElementById('alertMessage').innerHTML = message;
-        
-        // Show modal
         alertModal.classList.remove('hidden');
         
-        // Add escape key listener
         const escapeHandler = (e) => {
             if (e.key === 'Escape') closeAlert();
         };
         document.addEventListener('keydown', escapeHandler);
-        
-        // Store handler for cleanup
         alertModal._escapeHandler = escapeHandler;
     }
 
@@ -933,14 +944,13 @@
         const alertModal = document.getElementById('customAlertModal');
         if (alertModal) {
             alertModal.classList.add('hidden');
-            // Remove escape key listener
             if (alertModal._escapeHandler) {
                 document.removeEventListener('keydown', alertModal._escapeHandler);
             }
         }
     }
 
-    // Function to show confirmation modal
+    // Confirmation modal functions
     function showConfirmationModal() {
         const date = document.querySelector('input[name="date"]:checked').value;
         const roomName = document.querySelector('input[name="room_id"]:checked').nextElementSibling.querySelector('h5').textContent;
@@ -948,7 +958,6 @@
         const endTime = document.getElementById('end_time').value;
         const purpose = document.getElementById('purpose').value;
 
-        // Create confirmation modal
         let confirmModal = document.getElementById('confirmBookingModal');
         if (!confirmModal) {
             confirmModal = document.createElement('div');
@@ -1029,7 +1038,6 @@
             document.body.appendChild(confirmModal);
         }
 
-        // Set confirmation details
         const confirmDate = new Date(date).toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -1041,7 +1049,6 @@
         document.getElementById('confirmRoom').textContent = roomName;
         document.getElementById('confirmTime').textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
 
-        // Show modal
         confirmModal.classList.remove('hidden');
     }
 
@@ -1053,27 +1060,12 @@
     }
 
     function submitBookingForm() {
-        document.getElementById('bookingForm').submit();
-    }
-
-    function updateSubmitButtonStatus() {
+        // Remove animation class before submitting
         const submitBtn = document.getElementById('submitBtn');
-        const submitText = document.getElementById('submitText');
-        const submitStatus = document.getElementById('submitStatus');
+        submitBtn.classList.remove('animate-pulse-subtle');
         
-        if (isRoomAvailable) {
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
-            submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-            submitStatus.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Room verified ✓';
-            submitStatus.className = 'ml-2 text-sm text-green-500';
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            submitBtn.classList.remove('hover:bg-indigo-700');
-            submitStatus.innerHTML = '<i class="fas fa-lock mr-1"></i> Verify availability first';
-            submitStatus.className = 'ml-2 text-sm text-yellow-600';
-        }
+        // Submit the form
+        document.getElementById('bookingForm').submit();
     }
 
     // Reset availability when form fields change
@@ -1093,7 +1085,6 @@
         }
     });
 
-    // Also reset when time changes
     document.getElementById('start_time').addEventListener('change', () => {
         isRoomAvailable = false;
         updateSubmitButtonStatus();
@@ -1108,16 +1099,11 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        // Set default date if not set
         const dateInput = document.querySelector('input[name="date"]:checked');
         if (dateInput) {
             loadAvailableRooms();
         }
-
-        // Validate time when page loads
         validateTime();
-        
-        // Initialize button status
         updateSubmitButtonStatus();
     });
 
@@ -1139,4 +1125,19 @@
         }
     });
 </script>
+
+<style>
+    @keyframes pulse-subtle {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.9;
+        }
+    }
+    
+    .animate-pulse-subtle {
+        animation: pulse-subtle 2s ease-in-out infinite;
+    }
+</style>
 @endsection

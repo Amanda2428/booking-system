@@ -317,9 +317,7 @@
                 .catch(() => alert('Delete failed'));
         }
 
-        /* =========================
-           CLOSE MODALS
-        ========================= */
+
         function closeModal() {
             document.getElementById('categoryModal').classList.add('hidden');
         }
@@ -328,9 +326,7 @@
             document.getElementById('roomsModal').classList.add('hidden');
         }
 
-        /* =========================
-           SUBMIT FORM (CREATE + EDIT)
-        ========================= */
+
         document.getElementById('categoryForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 

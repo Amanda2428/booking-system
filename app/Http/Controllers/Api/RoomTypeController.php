@@ -25,6 +25,7 @@ public function index(Request $request)
 
     // Calculate available rooms and average capacity
     $categories->getCollection()->transform(function ($category) {
+           $category->rooms_count = $category->rooms->count();
         $category->available_rooms = $category->rooms
             ->where('availability_status', 'available')
             ->count();
