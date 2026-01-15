@@ -115,52 +115,10 @@
                             <div>
                                 <h4 class="text-lg font-medium text-gray-800 mb-4">2. Choose Room</h4>
                                 <div id="roomsContainer">
-                                    <!-- Show all available rooms regardless of date -->
-                                    <div class="grid grid-cols-1 gap-4">
-                                        @php
-                                            $rooms = \App\Models\Room::with('category')
-                                                ->where('availability_status', 'available')
-                                                ->orderBy('name')
-                                                ->get();
-                                        @endphp
-                                        @forelse($rooms as $room)
-                                            <label class="relative">
-                                                <input type="radio" 
-                                                       name="room_id" 
-                                                       value="{{ $room->id }}"
-                                                       {{ old('room_id') == $room->id ? 'checked' : '' }}
-                                                       class="hidden peer"
-                                                       onchange="selectRoom({{ $room->id }}, '{{ addslashes($room->name) }}', '{{ addslashes($room->location) }}', {{ $room->capacity }})">
-                                                <div class="p-4 border rounded-lg cursor-pointer hover:border-indigo-300 peer-checked:border-indigo-500 peer-checked:bg-indigo-50">
-                                                    <div class="flex justify-between items-start">
-                                                        <div>
-                                                            <h5 class="font-semibold text-gray-800">{{ $room->name }}</h5>
-                                                            <p class="text-sm text-gray-600">{{ $room->location }}</p>
-                                                            <div class="flex items-center mt-2">
-                                                                <i class="fas fa-users text-gray-400 text-sm mr-2"></i>
-                                                                <span class="text-sm text-gray-500">{{ $room->capacity }} people</span>
-                                                                <span class="mx-3 text-gray-300">•</span>
-                                                                <i class="fas fa-tag text-gray-400 text-sm mr-2"></i>
-                                                                <span class="text-sm text-gray-500">{{ $room->category ? $room->category->name : 'General' }}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                            <i class="fas fa-door-open text-blue-600"></i>
-                                                        </div>
-                                                    </div>
-                                                    @if($room->description)
-                                                        <p class="mt-3 text-sm text-gray-700">{{ $room->description }}</p>
-                                                    @endif
-                                                </div>
-                                            </label>
-                                        @empty
-                                            <div class="text-center py-12">
-                                                <i class="fas fa-door-closed text-4xl text-gray-300 mb-4"></i>
-                                                <h4 class="text-lg font-medium text-gray-700 mb-2">No rooms available</h4>
-                                                <p class="text-gray-600">There are currently no rooms available for booking.</p>
-                                                <p class="text-sm text-gray-500 mt-2">Please contact support if you believe this is an error.</p>
-                                            </div>
-                                        @endforelse
+                                    <!-- Rooms will be loaded here based on selected date -->
+                                    <div class="text-center py-12">
+                                        <i class="fas fa-door-open text-4xl text-gray-300 mb-4"></i>
+                                        <p class="text-gray-600">Select a date first to see available rooms</p>
                                     </div>
                                 </div>
                                 @error('room_id')
@@ -177,8 +135,7 @@
                                             Start Time *
                                         </label>
                                         <select id="start_time" name="start_time" required
-                                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            onchange="validateTime()">
+                                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                             <option value="">Select Start Time</option>
                                             @for ($hour = 8; $hour <= 20; $hour++)
                                                 @php
@@ -201,8 +158,7 @@
                                             End Time *
                                         </label>
                                         <select id="end_time" name="end_time" required
-                                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            onchange="validateTime()">
+                                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                             <option value="">Select End Time</option>
                                             @for ($hour = 9; $hour <= 21; $hour++)
                                                 @php
@@ -222,11 +178,6 @@
                                 </div>
                                 <div class="mt-4 p-4 bg-blue-50 rounded-lg hidden" id="timeValidation">
                                     <!-- Time validation messages -->
-                                </div>
-                                
-                                <!-- Availability status -->
-                                <div class="mt-4 p-4 rounded-lg hidden" id="availabilityStatus">
-                                    <!-- Real-time availability status will be shown here -->
                                 </div>
                             </div>
 
@@ -252,10 +203,14 @@
                                         class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
                                         Cancel
                                     </a>
-                                    <button type="button" id="submitBtn"
-                                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center text-lg"
-                                        onclick="validateAndSubmit()">
-                                        <i class="fas fa-paper-plane mr-2"></i> Submit Booking Request
+                                    <button type="submit" id="submitBtn"
+                                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
+                                        disabled>
+                                        <i class="fas fa-paper-plane mr-2"></i>
+                                        <span id="submitText">Submit Booking Request</span>
+                                        <span id="submitStatus" class="ml-2 text-sm opacity-75">
+                                            <i class="fas fa-lock mr-1"></i> Verify availability first
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -273,62 +228,22 @@
                         <!-- Selected Date -->
                         <div>
                             <p class="text-sm text-gray-500 mb-2">Selected Date</p>
-                            <p id="selectedDate" class="font-medium text-gray-800">
-                                @php
-                                    $defaultDate = now();
-                                    if(old('date')) {
-                                        $defaultDate = Carbon\Carbon::parse(old('date'));
-                                    }
-                                @endphp
-                                {{ $defaultDate->format('l, F d, Y') }}
-                            </p>
+                            <p id="selectedDate" class="font-medium text-gray-800">Not selected</p>
                         </div>
 
                         <!-- Selected Room -->
                         <div>
                             <p class="text-sm text-gray-500 mb-2">Selected Room</p>
                             <div id="selectedRoom" class="text-gray-800">
-                                @if(old('room_id'))
-                                    @php
-                                        $selectedRoom = \App\Models\Room::with('category')->find(old('room_id'));
-                                    @endphp
-                                    @if($selectedRoom)
-                                        <div>
-                                            <h5 class="font-semibold text-gray-800">{{ $selectedRoom->name }}</h5>
-                                            <p class="text-sm text-gray-600">{{ $selectedRoom->location }}</p>
-                                            <p class="text-sm text-gray-500 mt-1">
-                                                <i class="fas fa-users mr-1"></i> {{ $selectedRoom->capacity }} people capacity
-                                            </p>
-                                        </div>
-                                    @else
-                                        <div class="text-gray-400 italic">No room selected</div>
-                                    @endif
-                                @else
-                                    <div class="text-gray-400 italic">No room selected</div>
-                                @endif
+                                <div class="text-gray-400 italic">No room selected</div>
                             </div>
                         </div>
 
                         <!-- Selected Time -->
                         <div>
                             <p class="text-sm text-gray-500 mb-2">Time Slot</p>
-                            <p id="selectedTime" class="font-medium text-gray-800">
-                                @if(old('start_time') && old('end_time'))
-                                    {{ date('h:i A', strtotime(old('start_time'))) }} - {{ date('h:i A', strtotime(old('end_time'))) }}
-                                @else
-                                    Not selected
-                                @endif
-                            </p>
-                            <p id="duration" class="text-sm text-gray-600 mt-1">
-                                @if(old('start_time') && old('end_time'))
-                                    @php
-                                        $start = Carbon\Carbon::parse(old('start_time'));
-                                        $end = Carbon\Carbon::parse(old('end_time'));
-                                        $duration = $end->diffInHours($start);
-                                    @endphp
-                                    Duration: {{ $duration }} hours
-                                @endif
-                            </p>
+                            <p id="selectedTime" class="font-medium text-gray-800">Not selected</p>
+                            <p id="duration" class="text-sm text-gray-600 mt-1"></p>
                         </div>
 
                         <!-- Rules & Guidelines -->
@@ -358,18 +273,15 @@
                             </ul>
                         </div>
 
-                        <!-- Real-time availability -->
+                        <!-- Availability Check -->
                         <div class="pt-6 border-t">
-                            <div class="mb-4">
-                                <h4 class="font-medium text-gray-800 mb-3">Current Availability</h4>
-                                <div id="realTimeAvailability" class="text-sm text-gray-600 italic">
-                                    Select date, room, and time to check availability
-                                </div>
-                            </div>
                             <button onclick="checkAvailability()"
                                 class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center">
                                 <i class="fas fa-search mr-2"></i> Check Availability
                             </button>
+                            <div class="mt-4 p-4 rounded-lg hidden" id="availabilityResult">
+                                <!-- Availability result will be shown here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -383,39 +295,15 @@
     let selectedRoomId = null;
     let selectedDate = null;
     let isRoomAvailable = false;
-    let availabilityChecked = false;
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set selected date
-        const dateRadio = document.querySelector('input[name="date"]:checked');
-        if (dateRadio) {
-            selectedDate = dateRadio.value;
-            updateDateSummary();
-        }
+    // Load available rooms based on selected date
+    function loadAvailableRooms() {
+        const dateInput = document.querySelector('input[name="date"]:checked');
+        if (!dateInput) return;
 
-        // Set selected room if exists
-        const roomRadio = document.querySelector('input[name="room_id"]:checked');
-        if (roomRadio) {
-            selectedRoomId = roomRadio.value;
-            const roomCard = roomRadio.closest('label');
-            if (roomCard) {
-                const roomName = roomCard.querySelector('h5').textContent;
-                const roomLocation = roomCard.querySelector('.text-gray-600').textContent;
-                const capacityText = roomCard.querySelector('.fa-users + .text-sm').textContent;
-                const capacity = parseInt(capacityText.match(/\d+/)[0]);
-                
-                updateSelectedRoom(roomName, roomLocation, capacity);
-            }
-        }
+        selectedDate = dateInput.value;
 
-        // Validate time
-        validateTime();
-    });
-
-    function updateDateSummary() {
-        if (!selectedDate) return;
-        
+        // Update summary
         const date = new Date(selectedDate);
         document.getElementById('selectedDate').textContent =
             date.toLocaleDateString('en-US', {
@@ -424,24 +312,125 @@
                 month: 'long',
                 day: 'numeric'
             });
+
+        // Show loading
+        document.getElementById('roomsContainer').innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-spinner fa-spin text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-600">Loading available rooms...</p>
+            </div>
+        `;
+
+        // Reset availability
+        isRoomAvailable = false;
+        updateSubmitButtonStatus();
+        document.getElementById('availabilityResult').classList.add('hidden');
+
+        // Get room_id from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoomId = urlParams.get('room_id');
+
+        // Fetch available rooms
+        fetch(`/user/rooms/available?date=${selectedDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.rooms && data.rooms.length > 0) {
+                    let roomsHTML = '<div class="grid grid-cols-1 gap-4">';
+
+                    data.rooms.forEach(room => {
+                        // Check multiple conditions for pre-selection
+                        const isUrlRoom = urlRoomId && parseInt(urlRoomId) === room.id;
+                        const isOldRoom = {{ old('room_id', 0) }} == room.id;
+                        
+                        roomsHTML += `
+                            <label class="relative">
+                                <input type="radio" 
+                                       name="room_id" 
+                                       value="${room.id}"
+                                       ${(isOldRoom || isUrlRoom) ? 'checked' : ''}
+                                       class="hidden peer"
+                                       onchange="handleRoomSelection(${room.id}, '${room.name.replace(/'/g, "\\'")}', '${room.location.replace(/'/g, "\\'")}', ${room.capacity})">
+                                <div class="p-4 border rounded-lg cursor-pointer hover:border-indigo-300 peer-checked:border-indigo-500 peer-checked:bg-indigo-50">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h5 class="font-semibold text-gray-800">${room.name}</h5>
+                                            <p class="text-sm text-gray-600">${room.location}</p>
+                                            <div class="flex items-center mt-2">
+                                                <i class="fas fa-users text-gray-400 text-sm mr-2"></i>
+                                                <span class="text-sm text-gray-500">${room.capacity} people</span>
+                                                <span class="mx-3 text-gray-300">•</span>
+                                                <i class="fas fa-tag text-gray-400 text-sm mr-2"></i>
+                                                <span class="text-sm text-gray-500">${room.category ? room.category.name : 'General'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                                            <i class="fas fa-door-open text-blue-600"></i>
+                                        </div>
+                                    </div>
+                                    ${room.description ? `
+                                        <p class="mt-3 text-sm text-gray-700">${room.description}</p>
+                                        ` : ''}
+                                </div>
+                            </label>
+                        `;
+                    });
+
+                    roomsHTML += '</div>';
+                    document.getElementById('roomsContainer').innerHTML = roomsHTML;
+
+                    // Auto-select room from URL parameter
+                    if (urlRoomId) {
+                        const room = data.rooms.find(r => r.id == urlRoomId);
+                        if (room) {
+                            const radioButton = document.querySelector(`input[name="room_id"][value="${room.id}"]`);
+                            if (radioButton) {
+                                radioButton.checked = true;
+                                handleRoomSelection(room.id, room.name, room.location, room.capacity);
+                            }
+                        }
+                    } else if ({{ old('room_id', 0) }}) {
+                        // Check for old input value
+                        const oldRoomId = {{ old('room_id', 0) }};
+                        const room = data.rooms.find(r => r.id == oldRoomId);
+                        if (room) {
+                            handleRoomSelection(room.id, room.name, room.location, room.capacity);
+                        }
+                    }
+                } else {
+                    document.getElementById('roomsContainer').innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fas fa-door-closed text-4xl text-gray-300 mb-4"></i>
+                            <h4 class="text-lg font-medium text-gray-700 mb-2">No rooms available</h4>
+                            <p class="text-gray-600">No rooms are available for the selected date.</p>
+                            <p class="text-sm text-gray-500 mt-2">Please try a different date or contact support.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                document.getElementById('roomsContainer').innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-exclamation-circle text-4xl text-red-300 mb-4"></i>
+                        <p class="text-red-600">Error loading rooms. Please try again.</p>
+                        <p class="text-sm text-gray-500 mt-2">${err.message}</p>
+                    </div>
+                `;
+            });
     }
 
-    function selectRoom(id, name, location, capacity) {
+    function handleRoomSelection(id, name, location, capacity) {
         selectedRoomId = id;
-        updateSelectedRoom(name, location, capacity);
-        
-        // Reset availability status
-        resetAvailabilityStatus();
-        
-        // If time is already selected, check availability
-        const startTime = document.getElementById('start_time').value;
-        const endTime = document.getElementById('end_time').value;
-        if (startTime && endTime && selectedDate) {
-            checkRealTimeAvailability();
-        }
-    }
+        isRoomAvailable = false;
+        updateSubmitButtonStatus();
+        document.getElementById('availabilityResult').classList.add('hidden');
 
-    function updateSelectedRoom(name, location, capacity) {
+        // Update summary
         document.getElementById('selectedRoom').innerHTML = `
             <div>
                 <h5 class="font-semibold text-gray-800">${name}</h5>
@@ -451,21 +440,25 @@
                 </p>
             </div>
         `;
+
+        // Enable time validation
+        validateTime();
     }
 
     function validateTime() {
         const startTime = document.getElementById('start_time').value;
         const endTime = document.getElementById('end_time').value;
         const validationDiv = document.getElementById('timeValidation');
-        const availabilityDiv = document.getElementById('availabilityStatus');
-
-        // Reset availability
-        resetAvailabilityStatus();
-        availabilityDiv.classList.add('hidden');
 
         if (!startTime || !endTime) {
             validationDiv.classList.add('hidden');
             updateTimeSummary(startTime, endTime);
+            
+            // Reset availability if time changes
+            isRoomAvailable = false;
+            updateSubmitButtonStatus();
+            document.getElementById('availabilityResult').classList.add('hidden');
+            
             return {
                 valid: false,
                 message: ''
@@ -474,7 +467,7 @@
 
         const start = new Date(`2000-01-01T${startTime}`);
         const end = new Date(`2000-01-01T${endTime}`);
-        const duration = (end - start) / (1000 * 60 * 60);
+        const duration = (end - start) / (1000 * 60 * 60); // Hours
 
         let message = '';
         let colorClass = '';
@@ -495,11 +488,6 @@
         } else {
             message = `Booking duration: ${duration.toFixed(1)} hours`;
             colorClass = 'bg-green-50 text-green-700 border-green-200';
-            
-            // If room is selected, check availability
-            if (selectedRoomId && selectedDate) {
-                checkRealTimeAvailability();
-            }
         }
 
         validationDiv.innerHTML = `
@@ -512,6 +500,13 @@
         validationDiv.classList.remove('hidden');
 
         updateTimeSummary(startTime, endTime);
+
+        // Reset availability if time changes
+        if (isRoomAvailable) {
+            isRoomAvailable = false;
+            updateSubmitButtonStatus();
+            document.getElementById('availabilityResult').classList.add('hidden');
+        }
 
         return {
             valid: valid,
@@ -549,18 +544,68 @@
         });
     }
 
-    function checkRealTimeAvailability() {
-        const startTime = document.getElementById('start_time').value;
-        const endTime = document.getElementById('end_time').value;
-        const availabilityDiv = document.getElementById('availabilityStatus');
-        const realTimeDiv = document.getElementById('realTimeAvailability');
-
-        if (!selectedRoomId || !selectedDate || !startTime || !endTime) {
+    function checkAvailability() {
+        if (!selectedRoomId || !selectedDate) {
+            showAlert('error', 
+                '<div class="flex items-center mb-4">' +
+                '<div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">' +
+                '<i class="fas fa-exclamation-triangle text-red-600"></i>' +
+                '</div>' +
+                '<div>' +
+                '<h4 class="font-semibold text-gray-800">Selection Required</h4>' +
+                '<p class="text-sm text-gray-600">Please select a date and room first</p>' +
+                '</div>' +
+                '</div>'
+            );
             return;
         }
 
-        // Show loading
-        realTimeDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Checking availability...';
+        const startTime = document.getElementById('start_time').value;
+        const endTime = document.getElementById('end_time').value;
+        const resultDiv = document.getElementById('availabilityResult');
+
+        if (!startTime || !endTime) {
+            showAlert('error',
+                '<div class="flex items-center mb-4">' +
+                '<div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">' +
+                '<i class="fas fa-exclamation-triangle text-red-600"></i>' +
+                '</div>' +
+                '<div>' +
+                '<h4 class="font-semibold text-gray-800">Time Selection Required</h4>' +
+                '<p class="text-sm text-gray-600">Please select start and end times</p>' +
+                '</div>' +
+                '</div>'
+            );
+            return;
+        }
+
+        // Validate time first
+        const timeValidation = validateTime();
+        if (!timeValidation.valid) {
+            showAlert('error',
+                '<div class="flex items-center mb-4">' +
+                '<div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">' +
+                '<i class="fas fa-exclamation-triangle text-red-600"></i>' +
+                '</div>' +
+                '<div>' +
+                '<h4 class="font-semibold text-gray-800">Invalid Time Selection</h4>' +
+                '<p class="text-sm text-gray-600">' + timeValidation.message + '</p>' +
+                '</div>' +
+                '</div>'
+            );
+            return;
+        }
+
+        resultDiv.innerHTML = `
+            <div class="flex items-center text-gray-600 bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                <i class="fas fa-spinner fa-spin mr-3"></i>
+                <span>Checking room availability for selected time slot...</span>
+            </div>
+        `;
+        resultDiv.classList.remove('hidden');
+        
+        // Disable submit button while checking
+        updateSubmitButtonStatus();
 
         fetch(`/user/bookings/check-availability`, {
                 method: 'POST',
@@ -577,80 +622,176 @@
             })
             .then(response => response.json())
             .then(data => {
-                availabilityChecked = true;
-                
                 if (data.available) {
-                    isRoomAvailable = true;
-                    realTimeDiv.innerHTML = `
-                        <div class="text-green-700">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            Room is available for the selected time!
-                        </div>
-                    `;
-                    
-                    // Show success message
-                    availabilityDiv.innerHTML = `
+                    resultDiv.innerHTML = `
                         <div class="text-green-700 bg-green-50 border border-green-200 p-4 rounded-lg">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            Room is available! You can proceed with your booking.
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-xl mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Room is Available!</h4>
+                                    <p class="text-sm mt-1">The room is free for your selected time slot.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                            <p class="text-sm text-blue-700">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                You can now proceed to submit your booking request.
+                            </p>
                         </div>
                     `;
-                    availabilityDiv.className = 'mt-4 p-4 rounded-lg border bg-green-50 border-green-200 text-green-700';
-                    availabilityDiv.classList.remove('hidden');
+                    isRoomAvailable = true;
+                    updateSubmitButtonStatus();
+                    
+                    // Show success alert
+                    showAlert('success',
+                        '<div class="flex items-center mb-4">' +
+                        '<div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">' +
+                        '<i class="fas fa-check-circle text-green-600 text-xl"></i>' +
+                        '</div>' +
+                        '<div>' +
+                        '<h4 class="text-lg font-semibold text-gray-800">Room Available!</h4>' +
+                        '<p class="text-gray-600">Great news! The room is available for your selected time.</p>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="mt-4 p-3 bg-green-50 rounded-lg">' +
+                        '<p class="text-sm text-green-700">' +
+                        '<i class="fas fa-lightbulb mr-2"></i>' +
+                        'You can now submit your booking request. Click the "Submit Booking Request" button below.' +
+                        '</p>' +
+                        '</div>'
+                    );
+                    
                 } else {
-                    isRoomAvailable = false;
-                    realTimeDiv.innerHTML = `
-                        <div class="text-red-700">
-                            <i class="fas fa-times-circle mr-2"></i>
-                            Room is not available for the selected time
+                    let suggestionsHTML = '';
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        suggestionsHTML = `
+                            <div class="mt-4">
+                                <h5 class="font-medium text-gray-700 mb-2">Suggested Alternatives:</h5>
+                                <div class="space-y-2">
+                                    ${data.suggestions.map(suggestion => `
+                                        <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                                            <div class="font-medium text-gray-800">${suggestion.time}</div>
+                                            <div class="text-sm text-blue-700 mt-1">${suggestion.message}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDiv.innerHTML = `
+                        <div class="text-red-700 bg-red-50 border border-red-200 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-times-circle text-xl mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Room Not Available</h4>
+                                    <p class="text-sm mt-1">${data.message || 'The room is already booked for your selected time.'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        ${suggestionsHTML}
+                        <div class="mt-3 p-3 bg-yellow-50 rounded-lg">
+                            <p class="text-sm text-yellow-700">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                Please choose a different time or room and check availability again.
+                            </p>
                         </div>
                     `;
                     
-                    // Show error message
-                    availabilityDiv.innerHTML = `
-                        <div class="text-red-700 bg-red-50 border border-red-200 p-4 rounded-lg">
-                            <i class="fas fa-times-circle mr-2"></i>
-                            Room is not available for the selected time. ${data.message || 'There is a conflict with an approved booking.'}
-                        </div>
-                        ${data.suggestions && data.suggestions.length > 0 ? `
-                            <div class="mt-4">
-                                <h5 class="font-medium text-gray-700 mb-2">Suggested Alternative Times:</h5>
-                                ${data.suggestions.map(suggestion => `
-                                    <div class="p-3 mb-2 bg-blue-50 border border-blue-200 rounded">
-                                        <div class="font-medium">${suggestion.time}</div>
-                                        <div class="text-sm text-blue-700">${suggestion.message}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    `;
-                    availabilityDiv.className = 'mt-4 p-4 rounded-lg border bg-red-50 border-red-200 text-red-700';
-                    availabilityDiv.classList.remove('hidden');
+                    isRoomAvailable = false;
+                    updateSubmitButtonStatus();
+                    
+                    // Build alert message
+                    let alertMessage = 
+                        '<div class="flex items-center mb-4">' +
+                        '<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">' +
+                        '<i class="fas fa-times-circle text-red-600 text-xl"></i>' +
+                        '</div>' +
+                        '<div>' +
+                        '<h4 class="text-lg font-semibold text-gray-800">Cannot Book Room</h4>' +
+                        '<p class="text-gray-600">The room is not available for your selected time.</p>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="mt-4 p-4 bg-red-50 rounded-lg">' +
+                        '<p class="text-red-700">' +
+                        '<i class="fas fa-info-circle mr-2"></i>' +
+                        'This room is already booked during your chosen time slot. ' +
+                        'Please choose a different time or select another room.' +
+                        '</p>' +
+                        '</div>';
+                    
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        alertMessage += 
+                            '<div class="mt-4">' +
+                            '<h5 class="font-medium text-gray-800 mb-3">Try These Alternatives:</h5>' +
+                            '<div class="space-y-2">';
+                        
+                        data.suggestions.forEach(suggestion => {
+                            alertMessage += 
+                                '<div class="flex items-center p-3 bg-blue-50 rounded-lg">' +
+                                '<i class="fas fa-lightbulb text-blue-500 mr-3"></i>' +
+                                '<div>' +
+                                '<div class="font-medium">' + suggestion.time + '</div>' +
+                                '<div class="text-sm text-blue-700">' + suggestion.message + '</div>' +
+                                '</div>' +
+                                '</div>';
+                        });
+                        
+                        alertMessage += '</div></div>';
+                    }
+                    
+                    alertMessage += 
+                        '<div class="mt-4 p-3 bg-yellow-50 rounded-lg">' +
+                        '<p class="text-sm text-yellow-700">' +
+                        '<i class="fas fa-exclamation-triangle mr-2"></i>' +
+                        'After selecting an alternative, click "Verify Room Availability" again.' +
+                        '</p>' +
+                        '</div>';
+                    
+                    showAlert('error', alertMessage);
                 }
             })
             .catch(err => {
-                isRoomAvailable = false;
-                realTimeDiv.innerHTML = `
-                    <div class="text-red-700">
-                        <i class="fas fa-exclamation-circle mr-2"></i>
-                        Error checking availability
+                console.error('Error checking availability:', err);
+                resultDiv.innerHTML = `
+                    <div class="text-red-700 bg-red-50 border border-red-200 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-xl mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Error Checking Availability</h4>
+                                <p class="text-sm mt-1">Unable to verify room availability. Please try again.</p>
+                            </div>
+                        </div>
                     </div>
                 `;
+                isRoomAvailable = false;
+                updateSubmitButtonStatus();
+                
+                showAlert('error',
+                    '<div class="flex items-center mb-4">' +
+                    '<div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">' +
+                    '<i class="fas fa-exclamation-triangle text-red-600"></i>' +
+                    '</div>' +
+                    '<div>' +
+                    '<h4 class="font-semibold text-gray-800">Connection Error</h4>' +
+                    '<p class="text-sm text-gray-600">Unable to check room availability. Please try again.</p>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="mt-4 p-3 bg-yellow-50 rounded-lg">' +
+                    '<p class="text-sm text-yellow-700">' +
+                    '<i class="fas fa-wifi mr-2"></i>' +
+                    'Check your internet connection and try again. If the problem persists, contact support.' +
+                    '</p>' +
+                    '</div>'
+                );
             });
     }
 
-    function resetAvailabilityStatus() {
-        isRoomAvailable = false;
-        availabilityChecked = false;
-        document.getElementById('realTimeAvailability').innerHTML = 'Select date, room, and time to check availability';
-        document.getElementById('availabilityStatus').classList.add('hidden');
-    }
+    // Form validation
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    function checkAvailability() {
-        checkRealTimeAvailability();
-    }
-
-    function validateAndSubmit() {
         const date = document.querySelector('input[name="date"]:checked');
         const roomId = document.querySelector('input[name="room_id"]:checked');
         const startTime = document.getElementById('start_time').value;
@@ -658,67 +799,344 @@
 
         // Basic validation
         if (!date || !roomId || !startTime || !endTime) {
-            alert('Please fill in all required fields');
+            showAlert('error',
+                '<div class="flex items-center mb-4">' +
+                '<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">' +
+                '<i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>' +
+                '</div>' +
+                '<div>' +
+                '<h4 class="text-lg font-semibold text-gray-800">Missing Information</h4>' +
+                '<p class="text-gray-600">Please fill in all required fields:</p>' +
+                '<ul class="mt-2 text-sm text-gray-600 list-disc list-inside">' +
+                (!date ? '<li>Select a date</li>' : '') +
+                (!roomId ? '<li>Choose a room</li>' : '') +
+                (!startTime ? '<li>Select start time</li>' : '') +
+                (!endTime ? '<li>Select end time</li>' : '') +
+                '</ul>' +
+                '</div>' +
+                '</div>'
+            );
             return;
         }
 
         // Time validation
         const timeValidation = validateTime();
         if (!timeValidation.valid) {
-            alert(timeValidation.message);
+            showAlert('error',
+                '<div class="flex items-center mb-4">' +
+                '<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">' +
+                '<i class="fas fa-clock text-red-600 text-xl"></i>' +
+                '</div>' +
+                '<div>' +
+                '<h4 class="text-lg font-semibold text-gray-800">Invalid Time Selection</h4>' +
+                '<p class="text-gray-600">' + timeValidation.message + '</p>' +
+                '</div>' +
+                '</div>'
+            );
             return;
         }
 
         // Check if availability has been verified
-        if (!availabilityChecked) {
-            if (!confirm('You haven\'t checked availability. Do you want to check availability before submitting?')) {
-                // Force availability check
-                checkRealTimeAvailability();
-                alert('Please check availability first by clicking the "Check Availability" button or waiting for the automatic check to complete.');
-                return;
-            }
-            checkRealTimeAvailability();
-            return;
-        }
-
-        // Check if room is available
         if (!isRoomAvailable) {
-            alert('Room is not available for the selected time. Please choose a different time or room.');
+            const alertHTML = 
+                '<div class="flex items-center mb-4">' +
+                '<div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">' +
+                '<i class="fas fa-lock text-red-600 text-xl"></i>' +
+                '</div>' +
+                '<div>' +
+                '<h4 class="text-lg font-semibold text-gray-800">Availability Not Verified</h4>' +
+                '<p class="text-gray-600">You must verify room availability before submitting.</p>' +
+                '</div>' +
+                '</div>' +
+                '<div class="mt-4 p-4 bg-red-50 rounded-lg">' +
+                '<p class="text-red-700">' +
+                '<i class="fas fa-exclamation-circle mr-2"></i>' +
+                '<strong>Important:</strong> The room might already be booked for your selected time.' +
+                '</p>' +
+                '</div>' +
+                '<div class="mt-4">' +
+                '<h5 class="font-medium text-gray-800 mb-2">Next Steps:</h5>' +
+                '<ol class="list-decimal list-inside text-sm text-gray-600 space-y-2">' +
+                '<li>Click the "Verify Room Availability" button below</li>' +
+                '<li>If the room is available, you can submit your booking</li>' +
+                '<li>If not available, choose a different time or room</li>' +
+                '</ol>' +
+                '</div>' +
+                '<div class="mt-6">' +
+                '<button onclick="checkAvailability()" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center font-medium">' +
+                '<i class="fas fa-search mr-2"></i> Verify Room Availability Now' +
+                '</button>' +
+                '</div>';
+            
+            showAlert('error', alertHTML);
+            
+            // Scroll to availability button
+            document.querySelector('[onclick="checkAvailability()"]').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            
+            // Highlight the availability button
+            const availBtn = document.querySelector('[onclick="checkAvailability()"]');
+            availBtn.classList.add('ring-4', 'ring-yellow-300', 'animate-pulse');
+            setTimeout(() => {
+                availBtn.classList.remove('ring-4', 'ring-yellow-300', 'animate-pulse');
+            }, 3000);
+            
             return;
         }
 
-        // Ask for final confirmation
-        if (confirm('Submit this booking request?')) {
-            document.getElementById('bookingForm').submit();
+        // Show confirmation modal
+        showConfirmationModal();
+    });
+
+    // Function to show custom alert modal
+    function showAlert(type, message) {
+        // Create or get alert modal
+        let alertModal = document.getElementById('customAlertModal');
+        if (!alertModal) {
+            alertModal = document.createElement('div');
+            alertModal.id = 'customAlertModal';
+            alertModal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4';
+            alertModal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-lg transform transition-all">
+                    <div class="p-6">
+                        <div id="alertMessage"></div>
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="closeAlert()" class="px-4 py-2 ${type === 'error' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-medium">
+                                OK, I Understand
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(alertModal);
+        }
+
+        // Set message
+        document.getElementById('alertMessage').innerHTML = message;
+        
+        // Show modal
+        alertModal.classList.remove('hidden');
+        
+        // Add escape key listener
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') closeAlert();
+        };
+        document.addEventListener('keydown', escapeHandler);
+        
+        // Store handler for cleanup
+        alertModal._escapeHandler = escapeHandler;
+    }
+
+    function closeAlert() {
+        const alertModal = document.getElementById('customAlertModal');
+        if (alertModal) {
+            alertModal.classList.add('hidden');
+            // Remove escape key listener
+            if (alertModal._escapeHandler) {
+                document.removeEventListener('keydown', alertModal._escapeHandler);
+            }
         }
     }
 
-    // Auto-check availability when all fields are filled
-    function autoCheckAvailability() {
-        const date = document.querySelector('input[name="date"]:checked');
-        const roomId = document.querySelector('input[name="room_id"]:checked');
+    // Function to show confirmation modal
+    function showConfirmationModal() {
+        const date = document.querySelector('input[name="date"]:checked').value;
+        const roomName = document.querySelector('input[name="room_id"]:checked').nextElementSibling.querySelector('h5').textContent;
         const startTime = document.getElementById('start_time').value;
         const endTime = document.getElementById('end_time').value;
+        const purpose = document.getElementById('purpose').value;
 
-        if (date && roomId && startTime && endTime) {
-            // Wait 1 second after last change to avoid too many requests
-            clearTimeout(window.availabilityTimeout);
-            window.availabilityTimeout = setTimeout(() => {
-                checkRealTimeAvailability();
-            }, 1000);
+        // Create confirmation modal
+        let confirmModal = document.getElementById('confirmBookingModal');
+        if (!confirmModal) {
+            confirmModal = document.createElement('div');
+            confirmModal.id = 'confirmBookingModal';
+            confirmModal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4';
+            confirmModal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-lg transform transition-all">
+                    <div class="p-6 border-b">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-semibold text-gray-800">Confirm Booking Request</h3>
+                            <button onclick="closeConfirmationModal()" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                                    <i class="fas fa-calendar text-blue-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-500">Date</p>
+                                    <p class="font-medium" id="confirmDate"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                                    <i class="fas fa-door-open text-purple-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-500">Room</p>
+                                    <p class="font-medium" id="confirmRoom"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                                    <i class="fas fa-clock text-green-600"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-500">Time Slot</p>
+                                    <p class="font-medium" id="confirmTime"></p>
+                                </div>
+                            </div>
+                            ${purpose ? `
+                                <div class="flex items-start">
+                                    <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
+                                        <i class="fas fa-sticky-note text-yellow-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm text-gray-500">Purpose</p>
+                                        <p class="font-medium">${purpose}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-blue-500 mt-0.5 mr-3"></i>
+                                <div>
+                                    <p class="text-sm text-blue-700">This booking requires admin approval. You will be notified once it's approved or rejected.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button onclick="closeConfirmationModal()" 
+                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">
+                                Cancel
+                            </button>
+                            <button onclick="submitBookingForm()" 
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                                <i class="fas fa-paper-plane mr-2"></i> Submit Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmModal);
+        }
+
+        // Set confirmation details
+        const confirmDate = new Date(date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        document.getElementById('confirmDate').textContent = confirmDate;
+        document.getElementById('confirmRoom').textContent = roomName;
+        document.getElementById('confirmTime').textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+
+        // Show modal
+        confirmModal.classList.remove('hidden');
+    }
+
+    function closeConfirmationModal() {
+        const confirmModal = document.getElementById('confirmBookingModal');
+        if (confirmModal) {
+            confirmModal.classList.add('hidden');
         }
     }
 
-    // Add event listeners for auto-checking
-    document.querySelectorAll('input[name="date"]').forEach(input => {
-        input.addEventListener('change', autoCheckAvailability);
+    function submitBookingForm() {
+        document.getElementById('bookingForm').submit();
+    }
+
+    function updateSubmitButtonStatus() {
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitText');
+        const submitStatus = document.getElementById('submitStatus');
+        
+        if (isRoomAvailable) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+            submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            submitStatus.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Room verified ✓';
+            submitStatus.className = 'ml-2 text-sm text-green-500';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.remove('hover:bg-indigo-700');
+            submitStatus.innerHTML = '<i class="fas fa-lock mr-1"></i> Verify availability first';
+            submitStatus.className = 'ml-2 text-sm text-yellow-600';
+        }
+    }
+
+    // Reset availability when form fields change
+    document.querySelectorAll('input[name="date"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            isRoomAvailable = false;
+            updateSubmitButtonStatus();
+            document.getElementById('availabilityResult').classList.add('hidden');
+        });
     });
-    
-    document.querySelectorAll('input[name="room_id"]').forEach(input => {
-        input.addEventListener('change', autoCheckAvailability);
+
+    document.addEventListener('change', (e) => {
+        if (e.target.name === 'room_id') {
+            isRoomAvailable = false;
+            updateSubmitButtonStatus();
+            document.getElementById('availabilityResult').classList.add('hidden');
+        }
     });
-    
-    document.getElementById('start_time').addEventListener('change', autoCheckAvailability);
-    document.getElementById('end_time').addEventListener('change', autoCheckAvailability);
+
+    // Also reset when time changes
+    document.getElementById('start_time').addEventListener('change', () => {
+        isRoomAvailable = false;
+        updateSubmitButtonStatus();
+        document.getElementById('availabilityResult').classList.add('hidden');
+    });
+
+    document.getElementById('end_time').addEventListener('change', () => {
+        isRoomAvailable = false;
+        updateSubmitButtonStatus();
+        document.getElementById('availabilityResult').classList.add('hidden');
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default date if not set
+        const dateInput = document.querySelector('input[name="date"]:checked');
+        if (dateInput) {
+            loadAvailableRooms();
+        }
+
+        // Validate time when page loads
+        validateTime();
+        
+        // Initialize button status
+        updateSubmitButtonStatus();
+    });
+
+    // Close modals when clicking outside
+    document.addEventListener('click', (e) => {
+        const alertModal = document.getElementById('customAlertModal');
+        const confirmModal = document.getElementById('confirmBookingModal');
+        
+        if (alertModal && !alertModal.classList.contains('hidden')) {
+            if (e.target === alertModal) {
+                closeAlert();
+            }
+        }
+        
+        if (confirmModal && !confirmModal.classList.contains('hidden')) {
+            if (e.target === confirmModal) {
+                closeConfirmationModal();
+            }
+        }
+    });
 </script>
 @endsection

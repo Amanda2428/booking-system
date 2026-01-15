@@ -162,7 +162,7 @@
                 location.</p>
         </a>
 
-        <a href="#"
+        <a href="{{ route('room-types') }}"
             class="bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition-shadow hover:border-indigo-300">
             <div class="flex items-center mb-4">
                 <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mr-4">

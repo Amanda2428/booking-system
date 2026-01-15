@@ -55,6 +55,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('rooms.edit');
     Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
     Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
+    Route::get('/rooms/{room}/bookings', [RoomController::class, 'getBookings'])->name('rooms.bookings');
 
     // Categories
     Route::get('/categories', [RoomTypeController::class, 'index'])->name('categories');

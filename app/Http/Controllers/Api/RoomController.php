@@ -12,9 +12,16 @@ class RoomController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Room::with('category');
+        $query = Room::with(['category'])
+            ->withCount(['bookings' => function ($q) {
+                $q->where('status', '!=', 'cancelled');
+            }])
+            ->withAvg('feedbacks', 'rating');
 
-
+        // Add search if present
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
 
         $rooms = $query->latest()->paginate(12);
 
@@ -33,29 +40,45 @@ class RoomController extends Controller
         ));
     }
 
- public function search(Request $request)
-{
-    $query = Room::with('category');
+    public function getBookings(Room $room)
+    {
+        $bookings = $room->bookings()
+            ->with('user')
+            ->where('date', '>=', now()->toDateString())
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
 
-    if ($request->filled('search')) {
-        $query->where('name', 'like', '%' . $request->search . '%');
+        return response()->json($bookings);
     }
+    public function search(Request $request)
+    {
+        $query = Room::with(['category'])
+            ->withCount(['bookings' => function ($q) {
+                $q->where('status', '!=', 'cancelled');
+            }])
+            ->withAvg('feedbacks', 'rating');
 
-    $rooms = $query->latest()->paginate(12);
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
 
-    $totalRooms = Room::count();
-    $availableRooms = Room::where('availability_status', 'available')->count();
-    $avgCapacity = Room::avg('capacity') ?? 0;
-    $categories = RoomType::all();
+        $rooms = $query->latest()->paginate(12);
 
-    return view('admin.rooms', compact(
-        'rooms',
-        'totalRooms',
-        'availableRooms',
-        'avgCapacity',
-        'categories'
-    ));
-}
+        $totalRooms = Room::count();
+        $availableRooms = Room::where('availability_status', 'available')->count();
+        $avgCapacity = Room::avg('capacity') ?? 0;
+        $categories = RoomType::all();
+
+        return view('admin.rooms', compact(
+            'rooms',
+            'totalRooms',
+            'availableRooms',
+            'avgCapacity',
+            'categories'
+        ));
+    }
     public function create()
     {
         $categories = RoomType::all();
